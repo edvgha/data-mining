@@ -2,5 +2,6 @@
 __pycache__/
 *.pyc
 report/
-demo.parquet
+*.parquet
+!demo/data.parquet
 .pytest_cache/

@@ -7,7 +7,7 @@ It describes the implementation at [commit e2238fb](https://github.com/edvgha/da
 - [audit.py](../data_mining/audit.py): validation, sampling, statistics, bucketing, and reports.
 - [settings.py](../data_mining/settings.py): metric names and rule defaults.
 - [decisions.py](../data_mining/decisions.py): decisions, precedence, and evidence.
-- [config.yaml](../config.yaml): the supplied example configuration.
+- [demo/config.yaml](../demo/config.yaml): the supplied example configuration.
 
 The project analyzes a supplied dataset with a binary target $Y\in\{0,1\}$. It does not train XGBoost, create train/test splits, encode model inputs, or measure performance on unseen data. The name of the target is configurable. Positive always means **label 1**, regardless of the business application.
 

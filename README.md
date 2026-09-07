@@ -94,7 +94,8 @@ interactions:
 ```
 
 This small config works for a dataset with exactly those four features and the
-target. For your wider dataset, edit the complete included `config.yaml`.
+target. For your wider dataset, copy and edit the complete included
+[`demo/config.yaml`](demo/config.yaml).
 Unspecified settings and rule fields use documented defaults. Unknown config
 keys, unknown metrics, and duplicate YAML keys produce readable errors.
 
@@ -288,30 +289,41 @@ with changed settings.
 ## One million-row demo
 
 ```bash
-uv run --locked demo.py
+uv sync --locked
+uv run --locked -m data_mining demo/data.parquet demo/config.yaml
 ```
 
-This creates and saves `demo.parquet`, then reads it back through the public
-two-input audit function. The click-prediction example contains 27 columns:
+The `demo/` directory contains exactly two ready-to-use inputs:
+
+- [`data.parquet`](demo/data.parquet): 1,000,000 synthetic rows, compressed with Zstandard.
+- [`config.yaml`](demo/config.yaml): the corresponding feature schema, statistics, and decision rules.
+
+The command reads the saved Parquet through the same two-input interface used
+for your own datasets. The click-prediction example contains 27 columns:
 24 declared candidate features, the `clickoccured` target, `searchid` and
 `search_date`. The package itself accepts any binary target name and feature schema.
 
 The data deliberately contains a duplicate `widget_pos`/`rank_pos`, inverse rank
 signal, positive APY signal, sparse IDs, missing values, noise, and a joint
 `listing_set`/`inventory_type` effect. These are synthetic demonstrations, not
-findings about your actual data. The distribution is reproducible from seed 42.
+findings about your actual data. The saved dataset was generated with seed 42.
+APY is stored to two decimal places and synthetic asset values to two significant
+digits. Dictionary/delta encoding and Zstandard compression keep the million-row
+file compact without reducing the number of rows or columns.
 
-The supplied `sample_report/` lets you inspect a completed run immediately.
-Generate `demo.parquet` locally by running the demo; generated data stays out
-of Git. Each run writes a new report under `report/`.
+The demo is already generated and committed; no generation script is needed.
+Its configuration uses `output_dir: ../report`, resolved relative to `demo/`,
+so every run writes a fresh report under the root `report/` directory.
+Generated reports stay out of Git and out of `demo/`. The shipped Parquet is
+synthetic demonstration data, not real customer data.
 
 ## Project files and tests
 
 - `data_mining/audit.py`: input validation, statistics, analysis pipeline and report writing.
 - `data_mining/settings.py`: metric registry and validated rule configuration.
 - `data_mining/decisions.py`: decision engine, precedence and evidence.
-- `config.yaml`: full configuration for the click-prediction example.
-- `demo.py`: one synthetic end-to-end demo.
+- `demo/data.parquet`: saved 1-million-row synthetic example dataset.
+- `demo/config.yaml`: matching configuration for the example.
 - `tests/`: formula checks, data edge cases, decision logic and end-to-end switches.
 - `pyproject.toml`, `uv.lock`: pinned reproducible dependencies.
 

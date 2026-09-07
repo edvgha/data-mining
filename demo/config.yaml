@@ -1,3 +1,6 @@
+# Synthetic demo: 1,000,000 rows, 27 columns, generation seed 42.
+# This configuration matches data.parquet in this directory.
+# Synthetic precision: APY has two decimal places; assets have two significant digits.
 # Use the exact target name in your Parquet file.
 target: clickoccured
 
@@ -34,7 +37,7 @@ time_frequency: W
 group_column: searchid
 ignore: []
 strict_schema: true
-output_dir: report  # Relative to this config file, with a new run subfolder each time.
+output_dir: ../report  # Keep generated reports outside the demo input folder.
 
 bins: 10
 max_categories: 20
