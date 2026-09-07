@@ -84,6 +84,28 @@ class StatisticsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Undeclared"):
                 read_dataset(path, cfg)
 
+    def test_reader_preserves_values_dtypes_and_row_order_across_row_groups(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "data.parquet"
+            df = pd.DataFrame({
+                "x": pd.array([1, None, 3, 4, 5, 6], dtype="Int64"),
+                "category": pd.Categorical(["b", None, "a", "b", "a", "b"],
+                                           categories=["b", "a"], ordered=True),
+                "publisher.accountid": np.array([2, 1, 2, 1, 2, 1], dtype=np.int16),
+                "y": [0, 1, 0, 1, 0, 1],
+                "date": pd.date_range("2026-01-01", periods=6, tz="UTC"),
+                "ignored": ["unused"] * 6,
+            })
+            df.index = pd.Index([9, 3, 8, 2, 7, 1], name="saved_index")
+            df.to_parquet(path, row_group_size=2, compression="zstd")
+            cfg = {**DEFAULTS, "target": "y", "features": {
+                "x": "numerical", "category": "categorical", "publisher.accountid": "categorical"},
+                "time_column": "date", "ignore": ["ignored", "saved_index"]}
+            actual, extra, columns = read_dataset(path, cfg)
+            pd.testing.assert_frame_equal(actual, df.drop(columns="ignored").reset_index(drop=True))
+            self.assertEqual(extra, [])
+            self.assertEqual(columns, list(df.columns) + ["saved_index"])
+
     def test_integration_all_null_nullable_and_escaped_names(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "data.parquet"

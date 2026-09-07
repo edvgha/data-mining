@@ -246,6 +246,7 @@ not XGBoost monotonic constraints.
 ## Binning, sampling and statistical limits
 
 - Read the required Parquet columns into one pandas DataFrame; this is an in-memory tool, not an out-of-core engine. Available RAM must cover the frame and working copies.
+- The local file reader uses PyArrow `ParquetFile` with background prefetching disabled and single-threaded decoding and pandas conversion. This avoids the threaded dataset-scanner path; reading large files may be slower than parallel loading. Schema, values, dtypes, and row order are preserved.
 - Full data: profiles, bucket counts, positive-class rate, binned feature-target MI/Cramer's V/chi-square, temporal and group summaries.
 - Fixed uniform sample without replacement (100,000 rows by default): numerical target metrics, feature pairs, joint/conditional MI. The sample is not class-balanced; the seed, row count and positive-label count are reported.
 - Numerical buckets use observed values directly when cardinality <= `bins`; otherwise quantile bins with duplicate edges dropped. Missing/infinite values have an explicit bucket. Many ties may reduce the number of bins or hide a sparse tail, so inspect bucket counts and change `bins` when necessary.
@@ -328,6 +329,24 @@ finishes the per-feature stage; pair, interaction, temporal, and report-writing
 stages still follow. The million-row run can take a few minutes depending on
 your machine and enabled statistics. If it exits with `Analysis failed: ...`,
 the run did not complete; that error explains what needs correcting.
+
+If the command stalls during **Reading and validating Parquet**, loading has not
+finished and no report is expected yet. Separate progress messages identify
+metadata loading, column decoding, pandas conversion, and validation. Stop the
+stalled command with Ctrl+C, then run:
+
+```bash
+uv run --locked -m data_mining demo/data.parquet demo/config.yaml --diagnostics
+```
+
+This prints Python, OS/architecture, pandas, and PyArrow versions. If loading or
+validation takes longer than 30 seconds, Python stack snapshots are printed to
+stderr every 30 seconds until input validation finishes. A snapshot does not
+terminate the process or by itself mean an error occurred. Include the last
+progress message and the stack output when reporting a persistent stall.
+The reader's thread controls are documented in the
+[PyArrow ParquetFile API](https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetFile.html)
+and [Table.to_pandas API](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html#pyarrow.Table.to_pandas).
 
 ## Project files and tests
 

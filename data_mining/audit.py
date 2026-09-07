@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import argparse
 import base64
+import faulthandler
 import html
 import io
 import itertools
 import json
 import math
+import platform
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +23,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy
 from scipy import stats
@@ -139,29 +142,41 @@ def read_dataset(path, cfg):
     path = Path(path)
     if path.suffix.lower() != ".parquet" or not path.is_file():
         raise ValueError("dataset must be an existing .parquet file.")
-    schema = pq.read_schema(path)
-    columns = schema.names
-    if len(columns) != len(set(columns)):
-        raise ValueError("Parquet contains duplicate column names.")
-    declared = set(cfg["features"]) | set(cfg["ignore"]) | {cfg["target"]}
-    declared |= {cfg["time_column"], cfg["group_column"]} - {None}
-    missing = declared - set(columns)
-    if missing:
-        raise ValueError(f"Configured columns absent from Parquet: {sorted(missing)}. "
-                         "Column names are case-sensitive and must match the schema exactly.")
-    extra = set(columns) - declared
-    if extra and cfg["strict_schema"]:
-        raise ValueError(f"Undeclared columns: {sorted(extra)}. Add them to features or ignore.")
-    # Read only needed columns; ignored columns are checked in the Parquet schema.
-    selected = [x for x in columns if x in declared and x not in cfg["ignore"]]
-    df = pd.read_parquet(path, columns=selected).reset_index(drop=True)
+    print("  Opening Parquet metadata...", flush=True)
+    # This API accepts one local file. Avoid the dataset scanner and background
+    # read-ahead, and disable threads in both decoding and pandas conversion.
+    with pq.ParquetFile(path, pre_buffer=False) as parquet:
+        columns = parquet.schema_arrow.names
+        print(f"  Metadata: {parquet.metadata.num_rows:,} rows; {len(columns)} columns; "
+              f"{parquet.num_row_groups} row groups.", flush=True)
+        if len(columns) != len(set(columns)):
+            raise ValueError("Parquet contains duplicate column names.")
+        declared = set(cfg["features"]) | set(cfg["ignore"]) | {cfg["target"]}
+        declared |= {cfg["time_column"], cfg["group_column"]} - {None}
+        missing = declared - set(columns)
+        if missing:
+            raise ValueError(f"Configured columns absent from Parquet: {sorted(missing)}. "
+                             "Column names are case-sensitive and must match the schema exactly.")
+        extra = set(columns) - declared
+        if extra and cfg["strict_schema"]:
+            raise ValueError(f"Undeclared columns: {sorted(extra)}. Add them to features or ignore.")
+        # Preserve pandas index metadata, as pandas.read_parquet did; the index
+        # is discarded below. Ignored data columns are only checked in the schema.
+        selected = [x for x in columns if x in declared and x not in cfg["ignore"]]
+        print(f"  Reading {len(selected)} selected columns (single thread)...", flush=True)
+        table = parquet.read(columns=selected, use_threads=False, use_pandas_metadata=True)
+    print("  Converting Arrow table to pandas (single thread)...", flush=True)
+    df = table.to_pandas(use_threads=False)
+    df.reset_index(drop=True, inplace=True)
     if df.empty:
         raise ValueError("Dataset is empty.")
+    print(f"  Validating target: {cfg['target']}...", flush=True)
     y = df[cfg["target"]]
     if y.isna().any() or not y.isin([0, 1]).all():
         raise ValueError("Target must contain only 0 and 1, with no missing values.")
     if y.nunique() != 2:
         raise ValueError("Both target classes must be present for association analysis.")
+    print(f"  Validating {len(cfg['features'])} feature dtypes...", flush=True)
     for name, kind in cfg["features"].items():
         s = df[name]
         if kind == "numerical" and (not pd.api.types.is_numeric_dtype(s)
@@ -450,8 +465,8 @@ def save_json(path, value):
     path.write_text(json.dumps(clean(value), indent=2, allow_nan=False) + "\n")
 
 
-def analyze(dataset, config):
-    """Public API: analyze('data.parquet', 'config.yaml') -> report Path."""
+def analyze(dataset, config, *, diagnostics=False):
+    """Analyze local inputs; optional diagnostics capture stacks during loading."""
     print(f"Loading config: {Path(config).resolve()}", flush=True)
     cfg = load_config(config)
     root = Path(cfg["output_dir"])
@@ -460,7 +475,16 @@ def analyze(dataset, config):
     root = root.resolve()
     print(f"Output directory: {root} (a fresh run_* folder is created when writing reports)", flush=True)
     print(f"Reading and validating Parquet: {Path(dataset).resolve()}", flush=True)
-    df, undeclared, schema_columns = read_dataset(dataset, cfg)
+    if diagnostics:
+        print(f"Diagnostics: Python {platform.python_version()}; {platform.system()} {platform.machine()}; "
+              f"pandas {pd.__version__}; PyArrow {pa.__version__}.", flush=True)
+        print("Diagnostics: Python stacks will be printed every 30 seconds until input validation completes.", flush=True)
+        faulthandler.dump_traceback_later(30, repeat=True)
+    try:
+        df, undeclared, schema_columns = read_dataset(dataset, cfg)
+    finally:
+        if diagnostics:
+            faulthandler.cancel_dump_traceback_later()
     n = len(df)
     y = df[cfg["target"]].to_numpy(dtype=np.int8)
     features = cfg["features"]
@@ -791,9 +815,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset", help="Local Parquet file")
     parser.add_argument("config", help="YAML config file")
+    parser.add_argument("--diagnostics", action="store_true",
+                        help="Print runtime versions and Python stacks every 30 seconds during input loading")
     args = parser.parse_args()
     try:
-        analyze(args.dataset, args.config)
+        analyze(args.dataset, args.config, diagnostics=args.diagnostics)
     except (ValueError, TypeError, KeyError, OSError, yaml.YAMLError) as exc:
         parser.exit(2, f"Analysis failed: {exc}\n")
 
