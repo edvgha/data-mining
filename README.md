@@ -8,6 +8,10 @@ Two inputs: **a local Parquet file and a YAML config**. Reports use generic
 terms: rows, positives (`label=1`), negatives (`label=0`), and positive-class rate.
 Regression and multiclass targets are not supported in this version.
 
+See [Statistics and techniques: mathematics and interpretation](doc/statistics-and-techniques.md)
+for every implemented metric, formulas, intuition, worked examples, sampling
+details, configurable thresholds, and the exact keep/review/exclude rules.
+
 The report answers:
 
 1. What is the distribution and quality of each numerical/categorical column?
