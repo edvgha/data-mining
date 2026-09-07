@@ -1,0 +1,197 @@
+feature,rule,status,requested_action,effective_action,related_feature,reason,evidence
+rank_pos,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 5}"
+rank_pos,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 5}"
+rank_pos,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+rank_pos,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.2}"
+rank_pos,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 5}"
+rank_pos,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""auc_distance_from_half"": 0.17395467372002926, ""cohens_d"": -0.6197867576548179, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 0.007999604714602591, ""raw_auc"": 0.32604532627997074}"
+rank_pos,direction,not_triggered,review,none,,"Observed Cohen's d: negative, raw-score AUC: negative; no configured direction mismatch.","{""cohens_d"": -0.6197867576548179, ""expected_direction"": ""negative"", ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.32604532627997074}"
+apy,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 894234}"
+apy,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.030095, ""unique_usable_values"": 894234}"
+apy,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.030095}"
+apy,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 5.155144060500771e-06}"
+apy,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 894234}"
+apy,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""auc_distance_from_half"": 0.14982566653274187, ""cohens_d"": 0.533036486002365, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 0.005438004385007224, ""raw_auc"": 0.6498256665327419}"
+apy,direction,not_triggered,review,none,,"Observed Cohen's d: positive, raw-score AUC: positive; no configured direction mismatch.","{""cohens_d"": 0.533036486002365, ""expected_direction"": ""positive"", ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.6498256665327419}"
+apy_rank_on_widget,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 6}"
+apy_rank_on_widget,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 6}"
+apy_rank_on_widget,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+apy_rank_on_widget,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.473224}"
+apy_rank_on_widget,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 6}"
+apy_rank_on_widget,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""auc_distance_from_half"": 0.11533172558157317, ""cohens_d"": -0.43773047209951993, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 0.0035337013421223792, ""raw_auc"": 0.3846682744184268}"
+apy_rank_on_widget,direction,not_triggered,review,none,,"Observed Cohen's d: negative, raw-score AUC: negative; no configured direction mismatch.","{""cohens_d"": -0.43773047209951993, ""expected_direction"": ""negative"", ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.3846682744184268}"
+min_investment_amount,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 6}"
+min_investment_amount,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 6}"
+min_investment_amount,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+min_investment_amount,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.167121}"
+min_investment_amount,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 6}"
+min_investment_amount,weak_signal,triggered,review,review,,"Binned/pooled MI 2.36511e-06 < 0.0001, |Cohen's d| 0.00230463 < 0.05, and |AUC - 0.5| 0.00214566 < 0.02; weak marginal association under these thresholds. Interactions remain possible.","{""auc_distance_from_half"": 0.0021456596012676687, ""cohens_d"": -0.0023046267787933065, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 2.3651075602516653e-06, ""raw_auc"": 0.49785434039873233}"
+min_investment_amount,direction,skipped,review,none,,"Direction metrics are disabled, undefined, or below the configured minimum effect size.","{""cohens_d"": -0.0023046267787933065, ""expected_direction"": null, ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.49785434039873233}"
+term_months,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 6}"
+term_months,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 6}"
+term_months,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+term_months,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.167218}"
+term_months,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 6}"
+term_months,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""auc_distance_from_half"": 0.03301068465479451, ""cohens_d"": -0.10198744357320651, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 0.000352012701250187, ""raw_auc"": 0.4669893153452055}"
+term_months,direction,not_triggered,review,none,,"Observed Cohen's d: negative, raw-score AUC: negative; no configured direction mismatch.","{""cohens_d"": -0.10198744357320651, ""expected_direction"": null, ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.4669893153452055}"
+listing_set,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 2}"
+listing_set,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 2}"
+listing_set,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+listing_set,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.500676}"
+listing_set,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 2}"
+listing_set,weak_signal,triggered,review,review,,Binned/pooled MI 5.85168e-07 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 5.851679318780476e-07}"
+listing_set,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+mbt_star_rating,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 5}"
+mbt_star_rating,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.079843, ""unique_usable_values"": 5}"
+mbt_star_rating,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.079843}"
+mbt_star_rating,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.20028538608085358}"
+mbt_star_rating,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 5}"
+mbt_star_rating,weak_signal,triggered,review,review,,"Binned/pooled MI 6.2524e-06 < 0.0001, |Cohen's d| 0.0227005 < 0.05, and |AUC - 0.5| 0.00642002 < 0.02; weak marginal association under these thresholds. Interactions remain possible.","{""auc_distance_from_half"": 0.006420020417451711, ""cohens_d"": 0.022700547076487637, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 6.2523981598110775e-06, ""raw_auc"": 0.5064200204174517}"
+mbt_star_rating,direction,skipped,review,none,,"Direction metrics are disabled, undefined, or below the configured minimum effect size.","{""cohens_d"": 0.022700547076487637, ""expected_direction"": null, ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.5064200204174517}"
+assets_usd,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 1000000}"
+assets_usd,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 1000000}"
+assets_usd,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+assets_usd,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 1e-06}"
+assets_usd,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 1000000}"
+assets_usd,weak_signal,triggered,review,review,,"Binned/pooled MI 2.89192e-06 < 0.0001, |Cohen's d| 0.0119559 < 0.05, and |AUC - 0.5| 0.00528228 < 0.02; weak marginal association under these thresholds. Interactions remain possible.","{""auc_distance_from_half"": 0.005282282303012753, ""cohens_d"": 0.011955921650782622, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 2.8919171236138047e-06, ""raw_auc"": 0.5052822823030128}"
+assets_usd,direction,skipped,review,none,,"Direction metrics are disabled, undefined, or below the configured minimum effect size.","{""cohens_d"": 0.011955921650782622, ""expected_direction"": null, ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.5052822823030128}"
+popularity_tier_national,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 3}"
+popularity_tier_national,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 3}"
+popularity_tier_national,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+popularity_tier_national,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.334013}"
+popularity_tier_national,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 3}"
+popularity_tier_national,weak_signal,triggered,review,review,,Binned/pooled MI 2.52726e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 2.5272597473761124e-06}"
+popularity_tier_national,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+trust_tier_1to5,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 5}"
+trust_tier_1to5,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 5}"
+trust_tier_1to5,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+trust_tier_1to5,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.200425}"
+trust_tier_1to5,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 5}"
+trust_tier_1to5,weak_signal,triggered,review,review,,"Binned/pooled MI 1.50397e-06 < 0.0001, |Cohen's d| 0.00102202 < 0.05, and |AUC - 0.5| 0.000287458 < 0.02; weak marginal association under these thresholds. Interactions remain possible.","{""auc_distance_from_half"": 0.00028745842112865017, ""cohens_d"": 0.0010220198152053116, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 1.503970682984135e-06, ""raw_auc"": 0.5002874584211287}"
+trust_tier_1to5,direction,skipped,review,none,,"Direction metrics are disabled, undefined, or below the configured minimum effect size.","{""cohens_d"": 0.0010220198152053116, ""expected_direction"": null, ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.5002874584211287}"
+widget_pos,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 5}"
+widget_pos,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 5}"
+widget_pos,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+widget_pos,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.2}"
+widget_pos,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 5}"
+widget_pos,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""auc_distance_from_half"": 0.17395467372002926, ""cohens_d"": -0.6197867576548179, ""max_abs_d"": 0.05, ""max_auc_distance"": 0.02, ""max_mi"": 0.0001, ""mi_nats"": 0.007999604714602591, ""raw_auc"": 0.32604532627997074}"
+widget_pos,direction,not_triggered,review,none,,"Observed Cohen's d: negative, raw-score AUC: negative; no configured direction mismatch.","{""cohens_d"": -0.6197867576548179, ""expected_direction"": ""negative"", ""min_abs_d"": 0.05, ""min_auc_distance"": 0.02, ""raw_auc"": 0.32604532627997074}"
+inventory_type,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 2}"
+inventory_type,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 2}"
+inventory_type,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+inventory_type,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.500453}"
+inventory_type,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 2}"
+inventory_type,weak_signal,triggered,review,review,,Binned/pooled MI 2.89426e-08 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 2.894257948362895e-08}"
+inventory_type,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+widget_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 15000}"
+widget_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 15000}"
+widget_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+widget_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 9.9e-05}"
+widget_id,high_cardinality,triggered,review,review,,"15,000 observed categories >= 1,000; review identifier semantics, sparsity and unseen values.","{""operator"": "">="", ""threshold"": 1000, ""value"": 15000}"
+widget_id,weak_signal,skipped,review,none,,More than half of rows fall in OTHER; pooled MI cannot assess the original categories reliably.,{}
+widget_id,coverage,triggered,review,review,,Most categorical values were pooled for analysis; increase max_categories or review these IDs before deciding.,{}
+widget_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+device_type_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 3}"
+device_type_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 3}"
+device_type_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+device_type_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.6005}"
+device_type_id,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 3}"
+device_type_id,weak_signal,not_triggered,review,none,,At least one enabled marginal-strength criterion exceeds the weak-signal threshold.,"{""max_mi"": 0.0001, ""mi_nats"": 0.0015945707785153039}"
+device_type_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+compounding_method,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 4}"
+compounding_method,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 4}"
+compounding_method,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+compounding_method,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.250882}"
+compounding_method,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 4}"
+compounding_method,weak_signal,triggered,review,review,,Binned/pooled MI 1.55547e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 1.5554664175840472e-06}"
+compounding_method,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+state_code,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 8}"
+state_code,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.039763, ""unique_usable_values"": 8}"
+state_code,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.039763}"
+state_code,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.12545965214837587}"
+state_code,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 8}"
+state_code,weak_signal,triggered,review,review,,Binned/pooled MI 6.95257e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 6.9525708981434165e-06}"
+state_code,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+advertiser_customer_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 100}"
+advertiser_customer_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 100}"
+advertiser_customer_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+advertiser_customer_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.010275}"
+advertiser_customer_id,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 100}"
+advertiser_customer_id,weak_signal,skipped,review,none,,More than half of rows fall in OTHER; pooled MI cannot assess the original categories reliably.,{}
+advertiser_customer_id,coverage,triggered,review,review,,Most categorical values were pooled for analysis; increase max_categories or review these IDs before deciding.,{}
+advertiser_customer_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+advertiser_account_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 400}"
+advertiser_account_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 400}"
+advertiser_account_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+advertiser_account_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.002641}"
+advertiser_account_id,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 400}"
+advertiser_account_id,weak_signal,skipped,review,none,,More than half of rows fall in OTHER; pooled MI cannot assess the original categories reliably.,{}
+advertiser_account_id,coverage,triggered,review,review,,Most categorical values were pooled for analysis; increase max_categories or review these IDs before deciding.,{}
+advertiser_account_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+listing_style_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 4}"
+listing_style_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 4}"
+listing_style_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+listing_style_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.250312}"
+listing_style_id,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 4}"
+listing_style_id,weak_signal,triggered,review,review,,Binned/pooled MI 2.06765e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 2.0676473646671102e-06}"
+listing_style_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+publisher.accountid,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 80}"
+publisher.accountid,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 80}"
+publisher.accountid,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+publisher.accountid,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.01277}"
+publisher.accountid,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 80}"
+publisher.accountid,weak_signal,skipped,review,none,,More than half of rows fall in OTHER; pooled MI cannot assess the original categories reliably.,{}
+publisher.accountid,coverage,triggered,review,review,,Most categorical values were pooled for analysis; increase max_categories or review these IDs before deciding.,{}
+publisher.accountid,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+media_channel,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 4}"
+media_channel,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 4}"
+media_channel,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+media_channel,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.45044}"
+media_channel,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 4}"
+media_channel,weak_signal,triggered,review,review,,Binned/pooled MI 8.90235e-05 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 8.902349833659267e-05}"
+media_channel,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+publisher_customer_id,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 40}"
+publisher_customer_id,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 40}"
+publisher_customer_id,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+publisher_customer_id,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.025391}"
+publisher_customer_id,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 40}"
+publisher_customer_id,weak_signal,triggered,review,review,,Binned/pooled MI 7.73529e-05 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 7.735292777487422e-05}"
+publisher_customer_id,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+service_code,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 3}"
+service_code,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 3}"
+service_code,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+service_code,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.333999}"
+service_code,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 3}"
+service_code,weak_signal,triggered,review,review,,Binned/pooled MI 1.61308e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 1.613076531885863e-06}"
+service_code,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+week_day,all_missing,not_triggered,exclude,none,,Configured condition not met.,"{""unique_usable_values"": 7}"
+week_day,constant,not_triggered,exclude,none,,Configured condition not met.,"{""missing_fraction"": 0.0, ""unique_usable_values"": 7}"
+week_day,missingness,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.8, ""value"": 0.0}"
+week_day,near_constant,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 0.995, ""value"": 0.143725}"
+week_day,high_cardinality,not_triggered,review,none,,Configured condition not met.,"{""operator"": "">="", ""threshold"": 1000, ""value"": 7}"
+week_day,weak_signal,triggered,review,review,,Binned/pooled MI 2.65435e-06 < 0.0001; weak marginal association under these thresholds. Interactions remain possible.,"{""max_mi"": 0.0001, ""mi_nats"": 2.6543530957084255e-06}"
+week_day,direction,not_applicable,review,none,,Unordered categories have no global positive/negative direction.,{}
+rank_pos,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+apy,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+widget_pos,redundancy,triggered,exclude,exclude,rank_pos,"Spearman correlation with retained 'rank_pos' is +1.000000; absolute correlation threshold 0.950, based on 100,000 pairwise-complete sampled rows. Representative chosen by force_keep, prefer order, lower missingness, greater |AUC-0.5|, then config order.","{""metric"": ""spearman"", ""retained_feature"": ""rank_pos"", ""sign"": ""absolute"", ""threshold"": 0.95, ""valid_rows"": 100000, ""value"": 1.0}"
+apy_rank_on_widget,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+term_months,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+assets_usd,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+min_investment_amount,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+trust_tier_1to5,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}
+listing_set,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+popularity_tier_national,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+inventory_type,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+widget_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+device_type_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+compounding_method,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+advertiser_customer_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+advertiser_account_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+listing_style_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+publisher.accountid,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+media_channel,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+publisher_customer_id,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+service_code,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+week_day,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+state_code,redundancy,not_applicable,exclude,none,,Automatic redundancy decisions currently use numeric Pearson/Spearman pairs; inspect mixed/categorical associations separately.,{}
+mbt_star_rating,redundancy,not_triggered,exclude,none,,No above-threshold direct correlation with an earlier retained representative.,{}

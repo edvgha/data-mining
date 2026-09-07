@@ -1,0 +1,21 @@
+{
+  "tests_passed": 19,
+  "demo_rows": 1000000,
+  "demo_positives": 39725,
+  "demo_positive_rate": 0.039725,
+  "candidate_features": 24,
+  "feature_pairs": 276,
+  "decision_counts": {
+    "review": 18,
+    "keep": 5,
+    "exclude": 1
+  },
+  "checks": [
+    "Package/CLI renamed to data_mining",
+    "Generic positive-class terminology",
+    "Parquet read: 1,000,000 rows",
+    "Count conservation across feature, joint and time tables",
+    "19 statistical and integration tests"
+  ],
+  "command": "uv run --locked -m unittest discover -s tests -v"
+}

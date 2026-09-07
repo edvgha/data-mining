@@ -1,0 +1,5 @@
+features,sample_rows,observed_sample_cells,joint_mi_nats,best_single_mi_nats,gain_over_best_single_nats,feature_1,conditional_mi_1_nats,feature_2,conditional_mi_2_nats,status,possible_cells,observed_full_cells,low_support_row_fraction,feature_3,conditional_mi_3_nats
+rank_pos + device_type_id,100000,15,0.009025697697071334,0.00744075939788574,0.001584938299185594,rank_pos,0.007589724013938627,device_type_id,0.001584938299185594,computed,15,15,0.0,,
+apy + term_months,100000,66,0.0064742374058892015,0.005315767958181155,0.0011584694477080465,apy,0.006108813131397238,term_months,0.0011584694477080465,computed,66,66,0.0,,
+listing_set + inventory_type,100000,4,0.0027421390185114886,2.67736448167355e-06,0.002739461654029815,listing_set,0.0027419525029197256,inventory_type,0.002739461654029815,computed,4,4,0.0,,
+media_channel + device_type_id + rank_pos,100000,60,0.00924808371883732,0.00744075939788574,0.0018073243209515803,media_channel,0.00022238602176598635,device_type_id,0.0016837298602522203,computed,60,60,0.0,rank_pos,0.007720530876029188
