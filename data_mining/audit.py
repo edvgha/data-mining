@@ -452,7 +452,14 @@ def save_json(path, value):
 
 def analyze(dataset, config):
     """Public API: analyze('data.parquet', 'config.yaml') -> report Path."""
+    print(f"Loading config: {Path(config).resolve()}", flush=True)
     cfg = load_config(config)
+    root = Path(cfg["output_dir"])
+    if not root.is_absolute():
+        root = Path(config).resolve().parent / root
+    root = root.resolve()
+    print(f"Output directory: {root} (a fresh run_* folder is created when writing reports)", flush=True)
+    print(f"Reading and validating Parquet: {Path(dataset).resolve()}", flush=True)
     df, undeclared, schema_columns = read_dataset(dataset, cfg)
     n = len(df)
     y = df[cfg["target"]].to_numpy(dtype=np.int8)
@@ -463,6 +470,8 @@ def analyze(dataset, config):
     rng = np.random.default_rng(cfg["seed"])
     sample_idx = np.sort(rng.choice(n, min(n, cfg["sample_rows"]), replace=False))
     ys = y[sample_idx]
+    print(f"Loaded {n:,} rows; {len(features)} features; analysis sample: {len(sample_idx):,} rows.", flush=True)
+    print("Profiling features and target associations...", flush=True)
     buckets, labels, profiles, numeric = {}, {}, [], {}
     association_rows, feature_tables, time_tables, bucket_dictionary = [], {}, {}, []
     for i, (name, kind) in enumerate(features.items(), 1):
@@ -528,6 +537,8 @@ def analyze(dataset, config):
     pair_rows = []
     pair_count = len(names) * (len(names) - 1) // 2
     pairs_limit = cfg["max_pairs"] if any(enabled(cfg, metric) for metric in METRICS["feature_pairs"]) else 0
+    pairs_to_analyze = min(pair_count, pairs_limit)
+    print(f"Analyzing feature pairs: {pairs_to_analyze}/{pair_count} pairs...", flush=True)
     for a, b in itertools.islice(itertools.combinations(names, 2), pairs_limit):
         ka, kb = internal[a], internal[b]
         row = {"feature_a": a, "feature_b": b, "type_a": features[a], "type_b": features[b],
@@ -552,10 +563,14 @@ def analyze(dataset, config):
             row["missingness_phi"], _ = safe_corr((sampled[ka] == 0).to_numpy().astype(float),
                                                  (sampled[kb] == 0).to_numpy().astype(float))
         pair_rows.append(row)
+        if len(pair_rows) % 25 == 0 or len(pair_rows) == pairs_to_analyze:
+            print(f"  Pairs completed: {len(pair_rows)}/{pairs_to_analyze}", flush=True)
     pairs_df = pd.DataFrame(pair_rows, columns=None if pair_rows else ["feature_a", "feature_b", "sample_rows"])
 
     joint_rows, joint_tables = [], {}
-    for group in cfg["interactions"]:
+    print("Checking configured interactions...", flush=True)
+    for i, group in enumerate(cfg["interactions"], 1):
+        print(f"  Interaction [{i}/{len(cfg['interactions'])}]: {' + '.join(group)}", flush=True)
         if not enabled(cfg, "joint_positive_rate") and not enabled(cfg, "joint_information"):
             joint_rows.append({"features": " + ".join(group), "status": "disabled"})
             continue
@@ -582,6 +597,7 @@ def analyze(dataset, config):
     temporal_features = []
     temporal_status = "not_requested"
     time_missing = 0
+    print("Checking temporal analysis...", flush=True)
     if cfg["time_column"] and not any(enabled(cfg, metric) for metric in METRICS["temporal"]):
         temporal_status = "disabled"
     if cfg["time_column"] and any(enabled(cfg, metric) for metric in METRICS["temporal"]):
@@ -598,7 +614,8 @@ def analyze(dataset, config):
             temporal_status = "computed"
             if enabled(cfg, "time_positive_rate"):
                 temporal_positive_rate = positive_rate_table(pd.DataFrame({"period": periods}), y, cfg)
-            for name in names:
+            for i, name in enumerate(names, 1):
+                print(f"  Temporal [{i}/{len(names)}]: {name}", flush=True)
                 key = internal[name]
                 if enabled(cfg, "time_drift"):
                     ct = pd.crosstab(periods, codes[key])
@@ -617,12 +634,14 @@ def analyze(dataset, config):
 
     group_summary = None
     if cfg["group_column"]:
+        print(f"Summarizing groups: {cfg['group_column']}...", flush=True)
         gs = df.groupby(cfg["group_column"], dropna=False, observed=True)[cfg["target"]].agg(["size", "sum"])
         group_summary = {"column": cfg["group_column"], "groups_including_missing": len(gs),
                          "missing_group_rows": int(df[cfg["group_column"]].isna().sum()),
                          "median_rows_per_group": float(gs["size"].median()),
                          "max_rows_per_group": int(gs["size"].max()),
                          "fraction_groups_with_positives": float((gs["sum"] > 0).mean())}
+    print("Evaluating feature selection rules...", flush=True)
     decisions, rule_evaluations = decide(profiles_df, target_df, pairs_df, cfg)
     low, high = wilson(y.sum(), n)
     summary = {"dataset": str(Path(dataset).resolve()), "target": cfg["target"],
@@ -655,11 +674,9 @@ def analyze(dataset, config):
             "Counts and positive-class rate are unweighted; supply original rows, not class-balanced/negative-sampled data for population positive-class rate.",
         ], "versions": {"pandas": pd.__version__, "numpy": np.__version__, "scipy": scipy.__version__}}
     # A fresh run directory prevents stale files from an earlier config being mixed in.
-    root = Path(cfg["output_dir"])
-    if not root.is_absolute():
-        root = Path(config).resolve().parent / root
     run_id = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%S_%fZ")
     out = root / run_id
+    print(f"Writing report tables: {out}", flush=True)
     out.mkdir(parents=True, exist_ok=False)
     (out / "feature_positive_rate").mkdir()
     (out / "joint_positive_rate").mkdir()
@@ -699,6 +716,7 @@ def analyze(dataset, config):
                                       "joint_files": joint_files})
     (out / "config_used.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
 
+    print("Rendering HTML report...", flush=True)
     notes = "".join(f"<li>{html.escape(x)}</li>" for x in summary["limitations"])
     decision_html = html_table(decisions, len(decisions))
     sections = [f"<h1>Data Mining</h1><p class='lead'>{n:,} rows · {y.sum():,} positives · "
@@ -722,8 +740,9 @@ def analyze(dataset, config):
                 "<h2>3. Feature–target associations</h2><p>Sorted by empirical binned/pooled MI in nats when enabled, otherwise config order. "
                 "This is an exploratory association ordering, not a validated feature ranking. "
                 "Raw numeric AUC treats the column itself as a score; it misses nonmonotonic effects and is not a fitted model score.</p>" + html_table(target_df)]
-    for name in names:
+    for i, name in enumerate(names, 1):
         if enabled(cfg, "positive_rate"):
+            print(f"  Plot [{i}/{len(names)}]: {name}", flush=True)
             sections.append(f"<details><summary>{html.escape(name)} — {features[name]}</summary>" +
                             plot_positive_rate(feature_tables[name], name, float(y.mean())) + html_table(feature_tables[name]) + "</details>")
     sections.append("<h2>Feature redundancy</h2><p>Pairwise-complete numeric rows; categorical comparisons use "
@@ -764,6 +783,7 @@ th{background:#eaf0f9;position:sticky;top:0}tr:nth-child(even){background:#f8faf
               "rule_evaluations.csv and the other CSV tables for exact values. The HTML report includes enabled positive-class rate plots.\n"]
     (out / "report.md").write_text("\n".join(lines).rstrip() + "\n")
     print(f"Report: {out / 'report.html'}", flush=True)
+    print("Analysis complete. Open the report.html file above in your browser.", flush=True)
     return out
 
 

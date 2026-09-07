@@ -268,8 +268,11 @@ untouched by feature-selection decisions.
 ## Outputs
 
 Every run creates a fresh directory under `output_dir`, resolved relative to the
-config file. The path is printed at completion, so old reports cannot be mixed
-with changed settings.
+config file. The absolute output directory is printed at startup, with progress
+for feature profiles, feature pairs, interactions, temporal analysis, and report
+writing. The final `Report:` line gives the exact HTML file to open in your
+browser; the command does not open a browser automatically. Old reports cannot
+be mixed with changed settings.
 
 | File | Contents |
 |---|---|
@@ -316,6 +319,15 @@ Its configuration uses `output_dir: ../report`, resolved relative to `demo/`,
 so every run writes a fresh report under the root `report/` directory.
 Generated reports stay out of Git and out of `demo/`. The shipped Parquet is
 synthetic demonstration data, not real customer data.
+
+**Where is the report?** Wait for `Analysis complete`, then open the file shown
+on the final `Report:` line. For this demo it is
+`report/run_<UTC timestamp>/report.html` inside the project directory, with
+`report.md` and the CSV/JSON files beside it. Reaching `[24/24] week_day` only
+finishes the per-feature stage; pair, interaction, temporal, and report-writing
+stages still follow. The million-row run can take a few minutes depending on
+your machine and enabled statistics. If it exits with `Analysis failed: ...`,
+the run did not complete; that error explains what needs correcting.
 
 ## Project files and tests
 
