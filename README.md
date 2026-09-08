@@ -27,7 +27,13 @@ training features, or claim that statistical screening establishes the best feat
 
 ## Run with your data
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+Requires Python 3.12 or 3.13 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+The committed `.python-version` selects Python 3.12 by default. The pinned
+`pandas==2.2.3` does not support Python 3.14; pandas first added general Python
+3.14 compatibility in [version 2.3.3](https://pandas.pydata.org/docs/whatsnew/v2.3.3.html).
+The project's Python constraint excludes 3.14 and newer so uv cannot select that
+unsupported combination. The lockfile pins dependencies; it does not by itself
+pin the Python interpreter.
 Unzip the project, change into its directory, and run:
 
 ```bash
@@ -344,6 +350,22 @@ validation takes longer than 30 seconds, Python stack snapshots are printed to
 stderr every 30 seconds until input validation finishes. A snapshot does not
 terminate the process or by itself mean an error occurred. Include the last
 progress message and the stack output when reporting a persistent stall.
+If the shell prompt returns before `Analysis complete`, the process has exited;
+it is no longer waiting for the 30-second stack snapshot. Capture its exit code
+and enable Python's fatal-error traceback handler with:
+
+```bash
+uv run --locked --python 3.12 python -X faulthandler -m data_mining demo/data.parquet demo/config.yaml --diagnostics
+echo "Exit code: $?"
+```
+
+This explicitly selects Python 3.12, including when an earlier run used 3.14.
+uv manages the project environment and downloads the requested Python version
+if needed. No manual deletion of `.venv` or source edits are required. Share the
+full output and exit code if the command still ends before creating a report;
+the exit code and any fatal traceback distinguish failure modes that progress
+messages alone cannot identify.
+
 If an older checkout stops at `table.to_pandas(use_threads=False)`, update it
 with `git pull --ff-only`: the current reader no longer calls that conversion.
 The same update handles stalls at `search_date (timestamp[ns])` while constructing
@@ -363,6 +385,7 @@ and [ChunkedArray.to_pylist API](https://arrow.apache.org/docs/python/generated/
 - `demo/config.yaml`: matching configuration for the example.
 - `tests/`: formula checks, data edge cases, decision logic and end-to-end switches.
 - `pyproject.toml`, `uv.lock`: pinned reproducible dependencies.
+- `.python-version`: default Python 3.12 interpreter selection for uv.
 
 ```bash
 uv run --locked -m unittest discover -s tests -v
