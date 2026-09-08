@@ -139,12 +139,23 @@ def load_config(path):
 
 
 def dataframe_from_arrow(table):
-    """Build pandas columns from Python values without Arrow's pandas converter."""
+    """Build pandas columns without Arrow's pandas converter or timestamp lists."""
     metadata = {item["field_name"]: item for item in
                 (table.schema.pandas_metadata or {}).get("columns", [])}
     data = {}
     for i, (field, column) in enumerate(zip(table.schema, table.columns), 1):
         print(f"  Converting column [{i}/{table.num_columns}]: {field.name} ({field.type})...", flush=True)
+        if pa.types.is_timestamp(field.type):
+            # Keep exact epoch ticks; converting nullable integers to float64
+            # would round nanoseconds. NumPy's NaT uses the minimum int64 value.
+            ticks = column.cast(pa.int64()).fill_null(np.iinfo(np.int64).min)
+            values = ticks.to_numpy(zero_copy_only=False).view(f"datetime64[{field.type.unit}]")
+            series = pd.Series(values, copy=False)
+            if field.type.tz is not None:
+                # Arrow's stored ticks are UTC instants, including across DST.
+                series = series.dt.tz_localize("UTC").dt.tz_convert(field.type.tz)
+            data[field.name] = series
+            continue
         values = column.to_pylist()
         if pa.types.is_dictionary(field.type):
             unified = column.unify_dictionaries()

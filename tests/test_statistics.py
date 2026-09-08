@@ -129,6 +129,34 @@ class StatisticsTests(unittest.TestCase):
             pd.testing.assert_series_equal(actual["id"], pd.Series(values, dtype="UInt64", name="id"))
             self.assertEqual(actual["y"].dtype, np.dtype("int8"))
 
+    def test_timestamps_use_datetime_arrays_and_keep_exact_ticks_units_and_timezones(self):
+        for unit in ["s", "ms", "us", "ns"]:
+            for timezone in [None, "UTC", "America/Los_Angeles"]:
+                with self.subTest(unit=unit, timezone=timezone):
+                    # Both UTC instants are 01:30 locally, on opposite sides of
+                    # the fall DST change. Sub-microsecond digits catch rounding.
+                    instants = np.array(["2026-11-01T08:30:00.000000123",
+                                         "2026-11-01T09:30:00.000000987"],
+                                        dtype=f"datetime64[{unit}]").view("int64")
+                    raw = [-1, 0, None, int(instants[0]), int(instants[1])]
+                    kind = pa.timestamp(unit, tz=timezone)
+                    chunks = [pa.array(raw[:3], type=pa.int64()).cast(kind),
+                              pa.array(raw[3:], type=pa.int64()).cast(kind)]
+                    table = pa.table({"date": pa.chunked_array(chunks)})
+                    # Assert the dependency receives a datetime ndarray, never
+                    # the Python Timestamp list used by the stalled conversion.
+                    with patch("data_mining.audit.pd.Series", wraps=pd.Series) as constructor:
+                        actual = dataframe_from_arrow(table)["date"]
+                    values = constructor.call_args_list[0].args[0]
+                    self.assertIsInstance(values, np.ndarray)
+                    self.assertEqual(values.dtype, np.dtype(f"datetime64[{unit}]"))
+                    expected_ticks = np.array([np.iinfo(np.int64).min if v is None else v
+                                               for v in raw], dtype=np.int64)
+                    np.testing.assert_array_equal(actual.array.asi8, expected_ticks)
+                    self.assertEqual(actual.array.unit, unit)
+                    self.assertEqual(str(actual.dt.tz) if actual.dt.tz else None, timezone)
+                    self.assertEqual(actual.isna().tolist(), [False, False, True, False, False])
+
     def test_dictionary_chunks_keep_categories_and_values(self):
         first = pa.DictionaryArray.from_arrays(pa.array([0, 1, None], type=pa.int8()),
                                               pa.array(["b", "a", "unused"]))

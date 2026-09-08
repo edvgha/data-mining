@@ -246,7 +246,7 @@ not XGBoost monotonic constraints.
 ## Binning, sampling and statistical limits
 
 - Read the required Parquet columns into one pandas DataFrame; this is an in-memory tool, not an out-of-core engine. Available RAM must cover the frame and working copies.
-- The local file reader uses PyArrow `ParquetFile` with background prefetching disabled and single-threaded decoding. It builds pandas columns from Python values without calling Arrow's `to_pandas()` converter, and prints each column being converted. This can be slower than native conversion, but bypasses the converter implicated in the reported loading stall. Numeric widths, pandas nullable dtypes, dictionary categories (including unused levels), timestamp units/timezones, and row order are preserved. Nullable integer/boolean columns without pandas metadata use pandas nullable dtypes to avoid losing values. A fresh row index is created; any stored index field follows the config's ordinary feature/context/ignore rules.
+- The local file reader uses PyArrow `ParquetFile` with background prefetching disabled and single-threaded decoding. It builds pandas columns without calling Arrow's `to_pandas()` converter, and prints each column being converted. Timestamps use exact integer epoch ticks viewed as NumPy datetime arrays; other columns use Python values. This bypasses the converter and Python timestamp-list construction implicated in the reported loading stalls. Numeric widths, pandas nullable dtypes, dictionary categories (including unused levels), timestamp units/timezones, and row order are preserved. Nullable integer/boolean columns without pandas metadata use pandas nullable dtypes to avoid losing values. A fresh row index is created; any stored index field follows the config's ordinary feature/context/ignore rules.
 - Full data: profiles, bucket counts, positive-class rate, binned feature-target MI/Cramer's V/chi-square, temporal and group summaries.
 - Fixed uniform sample without replacement (100,000 rows by default): numerical target metrics, feature pairs, joint/conditional MI. The sample is not class-balanced; the seed, row count and positive-label count are reported.
 - Numerical buckets use observed values directly when cardinality <= `bins`; otherwise quantile bins with duplicate edges dropped. Missing/infinite values have an explicit bucket. Many ties may reduce the number of bins or hide a sparse tail, so inspect bucket counts and change `bins` when necessary.
@@ -346,6 +346,10 @@ terminate the process or by itself mean an error occurred. Include the last
 progress message and the stack output when reporting a persistent stall.
 If an older checkout stops at `table.to_pandas(use_threads=False)`, update it
 with `git pull --ff-only`: the current reader no longer calls that conversion.
+The same update handles stalls at `search_date (timestamp[ns])` while constructing
+a Series: timestamp columns bypass `to_pylist()` and `to_pandas_dtype()`, use
+their original timestamp unit, map nulls to `NaT` without floating-point
+conversion, and restore any time zone from UTC instants.
 The reader's APIs are documented in the
 [PyArrow ParquetFile API](https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetFile.html)
 and [ChunkedArray.to_pylist API](https://arrow.apache.org/docs/python/generated/pyarrow.ChunkedArray.html#pyarrow.ChunkedArray.to_pylist).
