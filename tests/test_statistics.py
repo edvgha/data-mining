@@ -1,13 +1,17 @@
 """Focused regression tests for statistical correctness and unsafe schema cases."""
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import yaml
 
-from data_mining.audit import (DEFAULTS, analyze, bh_adjust, categorical_buckets,
+from data_mining.audit import (DEFAULTS, analyze, bh_adjust, categorical_buckets, dataframe_from_arrow,
                           flags_for, joint_information, load_config,
                           numerical_buckets, read_dataset, table_association, wilson)
 
@@ -90,21 +94,56 @@ class StatisticsTests(unittest.TestCase):
             df = pd.DataFrame({
                 "x": pd.array([1, None, 3, 4, 5, 6], dtype="Int64"),
                 "category": pd.Categorical(["b", None, "a", "b", "a", "b"],
-                                           categories=["b", "a"], ordered=True),
+                                           categories=["b", "a", "unused"], ordered=True),
+                "flag": pd.array([True, None, False, True, False, True], dtype="boolean"),
+                "float": pd.array([1, None, 3, 4, 5, 6], dtype="Float32"),
+                "text": pd.array(["a", None, "b", "a", "b", "a"], dtype="string"),
                 "publisher.accountid": np.array([2, 1, 2, 1, 2, 1], dtype=np.int16),
                 "y": [0, 1, 0, 1, 0, 1],
-                "date": pd.date_range("2026-01-01", periods=6, tz="UTC"),
+                "date": pd.date_range("2026-01-01 00:00:00.000000123", periods=6, tz="UTC"),
                 "ignored": ["unused"] * 6,
             })
             df.index = pd.Index([9, 3, 8, 2, 7, 1], name="saved_index")
             df.to_parquet(path, row_group_size=2, compression="zstd")
             cfg = {**DEFAULTS, "target": "y", "features": {
-                "x": "numerical", "category": "categorical", "publisher.accountid": "categorical"},
+                "x": "numerical", "category": "categorical", "publisher.accountid": "categorical",
+                "flag": "categorical", "float": "numerical", "text": "categorical"},
                 "time_column": "date", "ignore": ["ignored", "saved_index"]}
-            actual, extra, columns = read_dataset(path, cfg)
+            # The failing Table.to_pandas path must never be entered, including
+            # indirectly while restoring metadata or constructing pandas columns.
+            with patch("pyarrow.pandas_compat.table_to_dataframe",
+                       side_effect=AssertionError("Arrow pandas conversion was invoked")):
+                actual, extra, columns = read_dataset(path, cfg)
             pd.testing.assert_frame_equal(actual, df.drop(columns="ignored").reset_index(drop=True))
             self.assertEqual(extra, [])
             self.assertEqual(columns, list(df.columns) + ["saved_index"])
+
+    def test_reader_keeps_large_nullable_ids_exact_without_pandas_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "data.parquet"
+            values = [2**63 + 1, None, 2**64 - 1]
+            pq.write_table(pa.table({"id": pa.array(values, type=pa.uint64()),
+                                     "y": pa.array([0, 1, 0], type=pa.int8())}), path)
+            cfg = {**DEFAULTS, "target": "y", "features": {"id": "categorical"}}
+            actual, _, _ = read_dataset(path, cfg)
+            pd.testing.assert_series_equal(actual["id"], pd.Series(values, dtype="UInt64", name="id"))
+            self.assertEqual(actual["y"].dtype, np.dtype("int8"))
+
+    def test_dictionary_chunks_keep_categories_and_values(self):
+        first = pa.DictionaryArray.from_arrays(pa.array([0, 1, None], type=pa.int8()),
+                                              pa.array(["b", "a", "unused"]))
+        second = pa.DictionaryArray.from_arrays(pa.array([0, 1], type=pa.int8()), pa.array(["c", "b"]))
+        table = pa.table({"category": pa.chunked_array([first, second])})
+        actual = dataframe_from_arrow(table)
+        expected = pd.DataFrame({"category": pd.Categorical(
+            ["b", "a", None, "c", "b"], categories=["b", "a", "unused", "c"])})
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_dictionary_date_values_remain_dates(self):
+        expected = pd.DataFrame({"category": pd.Categorical(
+            [date(2026, 1, 1), None, date(2026, 1, 2)])})
+        actual = dataframe_from_arrow(pa.Table.from_pandas(expected))
+        pd.testing.assert_frame_equal(actual, expected)
 
     def test_integration_all_null_nullable_and_escaped_names(self):
         with tempfile.TemporaryDirectory() as tmp:

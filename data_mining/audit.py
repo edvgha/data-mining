@@ -138,13 +138,55 @@ def load_config(path):
     return configure_decisions(cfg)
 
 
+def dataframe_from_arrow(table):
+    """Build pandas columns from Python values without Arrow's pandas converter."""
+    metadata = {item["field_name"]: item for item in
+                (table.schema.pandas_metadata or {}).get("columns", [])}
+    data = {}
+    for i, (field, column) in enumerate(zip(table.schema, table.columns), 1):
+        print(f"  Converting column [{i}/{table.num_columns}]: {field.name} ({field.type})...", flush=True)
+        values = column.to_pylist()
+        if pa.types.is_dictionary(field.type):
+            unified = column.unify_dictionaries()
+            categories = unified.chunk(0).dictionary.to_pylist() if unified.num_chunks else []
+            category_type = field.type.value_type
+            category_dtype = (object if pa.types.is_date(category_type) or pa.types.is_time(category_type)
+                              else category_type.to_pandas_dtype())
+            dtype = pd.CategoricalDtype(pd.Index(categories, dtype=category_dtype),
+                                       ordered=field.type.ordered)
+        else:
+            # Only extension dtypes need pandas metadata. Physical Arrow types
+            # retain numeric widths and timestamp units/timezones on their own.
+            stored = metadata.get(field.name, {}).get("numpy_type")
+            dtype = pd.api.types.pandas_dtype(stored) if stored else None
+            if not isinstance(dtype, pd.api.extensions.ExtensionDtype):
+                if pa.types.is_integer(field.type) and column.null_count:
+                    # Avoid rounding large IDs through float64 when nulls exist.
+                    prefix = "UInt" if pa.types.is_unsigned_integer(field.type) else "Int"
+                    dtype = f"{prefix}{field.type.bit_width}"
+                elif pa.types.is_boolean(field.type) and column.null_count:
+                    dtype = "boolean"
+                elif pa.types.is_date(field.type) or pa.types.is_time(field.type):
+                    dtype = object
+                else:
+                    dtype = field.type.to_pandas_dtype()
+        if (pa.types.is_string(field.type) or pa.types.is_large_string(field.type)
+                or pa.types.is_binary(field.type) or pa.types.is_large_binary(field.type)):
+            # Share repeated category strings, rather than retaining one Python
+            # string object per row after converting a low-cardinality column.
+            shared = {}
+            values = [shared.setdefault(value, value) for value in values]
+        data[field.name] = pd.Series(values, dtype=dtype)
+    return pd.DataFrame(data, copy=False)
+
+
 def read_dataset(path, cfg):
     path = Path(path)
     if path.suffix.lower() != ".parquet" or not path.is_file():
         raise ValueError("dataset must be an existing .parquet file.")
     print("  Opening Parquet metadata...", flush=True)
-    # This API accepts one local file. Avoid the dataset scanner and background
-    # read-ahead, and disable threads in both decoding and pandas conversion.
+    # This API accepts one local file. Avoid the dataset scanner, background
+    # read-ahead, and threaded decoding.
     with pq.ParquetFile(path, pre_buffer=False) as parquet:
         columns = parquet.schema_arrow.names
         print(f"  Metadata: {parquet.metadata.num_rows:,} rows; {len(columns)} columns; "
@@ -160,14 +202,14 @@ def read_dataset(path, cfg):
         extra = set(columns) - declared
         if extra and cfg["strict_schema"]:
             raise ValueError(f"Undeclared columns: {sorted(extra)}. Add them to features or ignore.")
-        # Preserve pandas index metadata, as pandas.read_parquet did; the index
-        # is discarded below. Ignored data columns are only checked in the schema.
+        # Read configured physical columns. A stored pandas index is not restored;
+        # it can be declared as an ordinary feature/context column or ignored.
         selected = [x for x in columns if x in declared and x not in cfg["ignore"]]
         print(f"  Reading {len(selected)} selected columns (single thread)...", flush=True)
-        table = parquet.read(columns=selected, use_threads=False, use_pandas_metadata=True)
-    print("  Converting Arrow table to pandas (single thread)...", flush=True)
-    df = table.to_pandas(use_threads=False)
-    df.reset_index(drop=True, inplace=True)
+        table = parquet.read(columns=selected, use_threads=False)
+    print("  Building pandas DataFrame column by column...", flush=True)
+    df = dataframe_from_arrow(table)
+    del table
     if df.empty:
         raise ValueError("Dataset is empty.")
     print(f"  Validating target: {cfg['target']}...", flush=True)
