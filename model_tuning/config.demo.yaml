@@ -1,0 +1,41 @@
+# Runs against existing million-row demo. Names match its Parquet schema.
+target: clickoccured
+time_column: search_date
+features:
+  rank_pos: numerical
+  apy: numerical
+  min_investment_amount: numerical
+  term_months: numerical
+  mbt_star_rating: numerical
+  inventory_type: categorical
+  device_type_id: categorical
+  compounding_method: categorical
+  state_code: categorical
+  publisher.accountid: categorical
+  service_code: categorical
+group_by: [publisher.accountid, service_code]
+output_dir: ../report/model_tuning
+seed: 42
+nthread: 4
+split:
+  train_fraction: 0.6
+  validation_fraction: 0.2
+  early_stopping_fraction: 0.15
+  gap: 0D
+bootstrap:
+  method: time_block
+  time_frequency: 1D
+  n_resamples: 100
+  confidence: 0.95
+  training_repeats: 3
+tuning:
+  n_trials: 10
+  num_boost_round: 300
+  early_stopping_rounds: 30
+  stability_penalty: 1.0
+report:
+  shap_rows: 2000
+  plot_top_features: 20
+  min_group_rows: 100
+  min_group_clicks: 10
+  save_predictions: false

@@ -1,0 +1,53 @@
+{
+  "commands": [
+    "uv run --locked --extra tuning python -m unittest discover -s tests -v",
+    "uv run --locked --extra tuning python -m unittest discover -s tests -p test_model_tuning.py -v",
+    "uv run --locked --extra tuning python -m model_tuning demo/data.parquet model_tuning/config.demo.yaml"
+  ],
+  "results": {
+    "full_suite_tests_passed": 33,
+    "tuning_tests_passed_after_final_validation_guards": 8,
+    "demo_rows": 1000000,
+    "demo_trials": 10,
+    "demo_training_bootstrap_refits": 3,
+    "demo_test_rows": 202060,
+    "native_model_reload_and_shap_additivity": "passed",
+    "test_label_isolation": "passed",
+    "plots_visually_inspected": [
+      "calibration.png",
+      "shap_distribution.png"
+    ]
+  },
+  "versions": {
+    "xgboost": "3.4.1",
+    "optuna": "4.9.0",
+    "pandas": "2.2.3",
+    "numpy": "2.3.5",
+    "pyarrow": "25.0.1"
+  },
+  "demo_best_trial": 4,
+  "demo_num_boost_round": 136,
+  "demo_test_metrics": {
+    "dataset": "test (held out)",
+    "logloss": 0.1615233962842467,
+    "ne": 0.903473781963824,
+    "ne_train_baseline": 0.9020469389546386,
+    "brier": 0.03967333889863133,
+    "z_score": 10.929991101407179,
+    "click_error_pct": -10.577119720353913,
+    "rows": 202060,
+    "actual_clicks": 8781,
+    "expected_clicks": 7852.223117355723,
+    "actual_rate": 0.043457388894387806,
+    "predicted_rate": 0.03886084884368862,
+    "click_error": -928.7768826442771,
+    "abs_click_error_pct": 10.577119720353913,
+    "baseline_logloss": 0.17906318319912753,
+    "ne_status": "ok",
+    "click_error_pct_status": "ok",
+    "z_score_status": "iid_bernoulli_approximation",
+    "roc_auc": 0.7456664456999104,
+    "average_precision": 0.13493437605735445
+  },
+  "scope": "Synthetic repository demo only. The attached HTML report contains no raw training rows."
+}

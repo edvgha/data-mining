@@ -393,3 +393,15 @@ uv run --locked -m unittest discover -s tests -v
 
 There is no network lookup during an audit and no requirement for XGBoost,
 SHAP or a database at this stage.
+
+
+## Model tuning with Optuna and native XGBoost
+
+The separate [`model_tuning/`](model_tuning/README.md) workflow tunes a binary classifier from Parquet + YAML, uses chronological train/early-stop/validation/test windows, performs bootstrap evaluation and training-sensitivity refits, and saves an HTML report, native model, gain/SHAP explanations, and group calibration metrics.
+
+```bash
+uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+  demo/data.parquet model_tuning/config.demo.yaml
+```
+
+For your data, adapt [`model_tuning/config.yaml`](model_tuning/config.yaml). The demo target is `clickoccured`; the user-data template uses the requested `clickoccurrred`. Column names must match the actual Parquet schema. See the [tuning guide](model_tuning/README.md) for metric formulas, bootstrap assumptions, configuration, report artifacts and inference.
