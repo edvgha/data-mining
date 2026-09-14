@@ -226,6 +226,38 @@ Cubic deviations preserve sign and emphasize tails. Positive skewness often indi
 
 The project calls pandas `Series.skew()` and reports undefined values for constant features or inadequate support. Large skewness prompts inspection of units, sentinels, and tails; it does not automatically exclude a feature. See [pandas skewness](https://pandas.pydata.org/docs/reference/api/pandas.Series.skew.html) and the [adjusted coefficient formula](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skew.html).
 
+**Positive skew: a tail toward larger values**
+
+```text
+Data: [1, 2, 3, 4, 20]
+```
+
+Most values are between **1 and 4**, while **20** stretches the distribution toward the right.
+
+- Median: **3**
+- Mean: **6**
+- Example: most users click a few times, but one clicks much more often.
+
+**Negative skew: a tail toward smaller values**
+
+```text
+Data: [1, 17, 18, 19, 20]
+```
+
+Most values are between **17 and 20**, while **1** stretches the distribution toward the left.
+
+- Median: **18**
+- Mean: **15**
+- Example: most students score highly on an easy test, but one scores very low.
+
+| Property | Positive skew | Negative skew |
+|---|---|---|
+| Most observations in these examples | Toward the lower values | Toward the higher values |
+| Tail extends toward | Larger values | Smaller values |
+| Mean in these examples | Above the median | Below the median |
+
+**“Negative skew” does not mean negative numbers.** Both examples contain only positive numbers; the sign describes the tail’s direction. Mean above or below the median is a useful tendency, not a universal rule for identifying skewness.
+
 ### 3.7 Excess kurtosis — `kurtosis`
 
 Let $g_2=m_4/m_2^2-3$. The bias-adjusted excess kurtosis used by pandas is:
@@ -238,6 +270,49 @@ $$
 The output is `excess_kurtosis`. Subtracting 3 puts a normal population at zero excess kurtosis. Fourth powers emphasize extreme observations. Positive values often indicate heavier tails; negative values often indicate lighter tails relative to a normal distribution.
 
 Kurtosis should not be read simply as “peak height.” It is unstable with little data or extreme observations. The code reports it as undefined for constant features or insufficient observations. See [pandas kurtosis](https://pandas.pydata.org/docs/reference/api/pandas.Series.kurt.html).
+
+**Positive excess kurtosis: a few extreme deviations**
+
+```text
+Data: [-10, -1, 0, 0, 0, 0, 0, 1, 10]
+```
+
+Most values are between **−1 and 1**, while **−10 and 10** are far from the center. These extremes contribute strongly to the fourth moment.
+
+- Median: **0**
+- Mean: **0**
+- Skewness: **0** — the observations are symmetric.
+- Excess kurtosis: approximately **+3.83**.
+- Example: measurement errors are usually close to zero, but occasional large errors occur in either direction.
+
+**Negative excess kurtosis: values spread evenly over a bounded range**
+
+```text
+Data: [-4, -3, -2, -1, 0, 1, 2, 3, 4]
+```
+
+The values are evenly spaced from **−4 to 4**, with no isolated observations far from the rest.
+
+- Median: **0**
+- Mean: **0**
+- Skewness: **0** — these observations are also symmetric.
+- Excess kurtosis: approximately **−1.20**.
+- Example: deviations distributed evenly across a fixed range, rather than usually small with occasional large extremes.
+
+The values above use pandas `Series.kurt()`, including its sample-size correction, as the audit does.
+
+| Property | Positive-excess example | Negative-excess example |
+|---|---|---|
+| Most observations | Close to the center, with two distant extremes | Evenly spread across the range |
+| Skewness | 0 | 0 |
+| Excess kurtosis | +3.83 | −1.20 |
+| What the comparison reveals | Stronger contribution from extreme standardized deviations | Weaker contribution from extremes |
+
+**Skewness and kurtosis describe different aspects of shape.** Both examples have zero skewness, but their excess kurtosis differs. Kurtosis responds to extremes on either side because fourth powers are positive: a deviation of 1 contributes 1, while a deviation of either 10 or −10 contributes 10,000 before normalization.
+
+**Why “excess”?** A normal population has kurtosis 3. Subtracting 3 gives it excess kurtosis 0, providing a reference point. A sample value near zero does not establish normality, and a negative value does not indicate a left tail.
+
+**How to use this in the audit:** high excess kurtosis in a feature such as `assets_usd` is a reason to inspect upper and lower quantiles, minimum/maximum values, and the IQR outlier fraction. A few very large accounts may be legitimate, or extreme values may reflect unit errors or sentinels. IQR and MAD describe the middle or typical spread; kurtosis highlights the influence of extremes. It does not identify which rows are wrong, measure predictive usefulness, or automatically justify excluding a feature.
 
 ### 3.8 Zero and negative fractions — `zero_fraction`, `negative_fraction`
 
