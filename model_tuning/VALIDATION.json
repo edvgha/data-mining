@@ -2,7 +2,7 @@
   "commands": [
     "uv run --locked --extra tuning python -m unittest discover -s tests -v",
     "uv run --locked --extra tuning python -m unittest discover -s tests -p test_model_tuning.py -v",
-    "uv run --locked --extra tuning python -m model_tuning demo/data.parquet model_tuning/config.demo.yaml"
+    "uv run --locked --extra tuning python -m model_tuning demo/data.parquet demo/model_tuning.yaml"
   ],
   "results": {
     "full_suite_tests_passed": 33,
@@ -49,5 +49,6 @@
     "roc_auc": 0.7456664456999104,
     "average_precision": 0.13493437605735445
   },
-  "scope": "Synthetic repository demo only. The attached HTML report contains no raw training rows."
+  "scope": "Synthetic repository demo only. The attached HTML report contains no raw training rows.",
+  "command_paths_note": "Demo command path updated after relocating the unchanged config to demo/model_tuning.yaml; numerical results above are from the earlier validation run."
 }
