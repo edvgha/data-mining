@@ -106,16 +106,12 @@ source = { virtual = "." }
 dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "optuna" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "scipy" },
-]
-
-[package.optional-dependencies]
-tuning = [
-    { name = "optuna" },
     { name = "xgboost" },
 ]
 
@@ -123,15 +119,14 @@ tuning = [
 requires-dist = [
     { name = "matplotlib", specifier = "==3.10.8" },
     { name = "numpy", specifier = "==2.3.5" },
-    { name = "optuna", marker = "extra == 'tuning'", specifier = ">=4.5,<5" },
+    { name = "optuna", specifier = ">=4.5,<5" },
     { name = "pandas", specifier = "==2.2.3" },
     { name = "pyarrow", specifier = "==25.0.1" },
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "scikit-learn", specifier = "==1.8.0" },
     { name = "scipy", specifier = "==1.17.0" },
-    { name = "xgboost", marker = "extra == 'tuning'", specifier = ">=3.1,<4" },
+    { name = "xgboost", specifier = ">=3.1,<4" },
 ]
-provides-extras = ["tuning"]
 
 [[package]]
 name = "fonttools"

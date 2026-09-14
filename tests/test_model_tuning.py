@@ -5,9 +5,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from importlib.util import find_spec
-if find_spec("xgboost") is None or find_spec("optuna") is None:
-    raise unittest.SkipTest("Install the tuning extra to run model-tuning tests.")
 import numpy as np
 import pandas as pd
 import yaml

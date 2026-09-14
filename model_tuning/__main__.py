@@ -1,4 +1,4 @@
-"""Usage: uv run --extra tuning python -m model_tuning DATA.parquet CONFIG.yaml"""
+"""Usage: uv run python -m model_tuning DATA.parquet CONFIG.yaml"""
 import argparse
 from pathlib import Path
 import yaml
@@ -14,7 +14,7 @@ def main():
         from .pipeline import run
         out = run(args.data.resolve(), load_config(args.config))
     except ImportError as exc:
-        parser.exit(2, f"Missing dependency: {exc}. Run with uv run --extra tuning.\n")
+        parser.exit(2, f"Missing dependency: {exc}. Run uv sync --locked from the repository root.\n")
     except (ValueError, KeyError, TypeError, OSError, yaml.YAMLError) as exc:
         parser.exit(2, f"Error: {exc}\n")
     print(f"Report: {out / 'report.html'}", flush=True)

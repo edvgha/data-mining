@@ -71,10 +71,12 @@ Reported validation scores are selected on and therefore optimistic. Test scores
 
 ### 2.1 Schema and target
 
+Optuna and XGBoost are standard project dependencies. Run `uv sync --locked --python 3.12` from the repository root to install the shared analysis and tuning environment.
+
 The CLI takes exactly two positional inputs:
 
 ```bash
-uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+uv run --locked --python 3.12 python -m model_tuning \
   demo/data.parquet demo/model_tuning.yaml
 ```
 

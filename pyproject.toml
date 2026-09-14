@@ -11,12 +11,8 @@ dependencies = [
   "scikit-learn==1.8.0",
   "matplotlib==3.10.8",
   "PyYAML==6.0.3",
-]
-
-[project.optional-dependencies]
-tuning = [
-    "optuna>=4.5,<5",
-    "xgboost>=3.1,<4",
+  "optuna>=4.5,<5",
+  "xgboost>=3.1,<4",
 ]
 
 [tool.uv]

@@ -12,19 +12,22 @@ Two configurable workflows for binary classification datasets: inspect data and 
 | [`doc/`](doc/) | Detailed mathematical references: [data-mining statistics](doc/statistics-and-techniques.md) and [model-tuning techniques](doc/model-tuning-and-techniques.md). |
 | [`tests/`](tests/) | Formula, validation, leakage, model reload, and command-line integration checks. |
 | `report/` (generated) | Run-specific HTML reports, tables, and fitted models. Ignored by Git. |
-| [`pyproject.toml`](pyproject.toml), [`uv.lock`](uv.lock) | Python requirements, dependency modes, and locked dependency versions. |
+| [`pyproject.toml`](pyproject.toml), [`uv.lock`](uv.lock) | Python requirements, dependencies, and locked dependency versions. |
 | [`VALIDATION.json`](VALIDATION.json), [`model_tuning/VALIDATION.json`](model_tuning/VALIDATION.json) | Recorded results from earlier validation runs, not live test status. |
 
-## Setup / build modes
+## Setup
 
 Use Python **3.12 or 3.13** and `uv`. Commands below select Python 3.12 explicitly and run from the **repository root**. This repository runs directly from source (`tool.uv.package = false`); there is no separate wheel or application build step.
 
-| Mode | Setup | Available workflows |
-|---|---|---|
-| Analysis only | `uv sync --locked --python 3.12` | Dataset auditing and feature screening |
-| Analysis + model tuning | `uv sync --locked --extra tuning --python 3.12` | Both workflows, including Optuna and XGBoost |
+Install the shared environment for data mining and model tuning:
 
-The tuning extra adds dependencies to the base environment; it is not a separate model implementation. Use `--extra tuning` on tuning and full-test commands. Both modes use the committed lockfile. The supported tuning implementation uses CPU histogram training; GPU, multiclass, and regression modes are not exposed.
+```bash
+uv sync --locked --python 3.12
+```
+
+Optuna and XGBoost are standard project dependencies, installed alongside the analysis libraries. Both workflows use the committed lockfile and require no extra dependency flags.
+
+The supported tuning implementation uses CPU histogram training; GPU, multiclass, and regression modes are not exposed.
 
 ## Run the demos
 
@@ -48,7 +51,7 @@ Open the path printed after `Report:`. Outputs are saved under `report/run_*/`, 
 ### Model-tuning demo
 
 ```bash
-uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+uv run --locked --python 3.12 python -m model_tuning \
   demo/data.parquet demo/model_tuning.yaml
 ```
 
@@ -62,7 +65,7 @@ Both demos read the committed data; no data-generation step is needed. Reports a
 uv run --locked --python 3.12 python -m data_mining \
   /path/to/data.parquet /path/to/audit.yaml
 
-uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+uv run --locked --python 3.12 python -m model_tuning \
   /path/to/data.parquet /path/to/tuning.yaml
 ```
 
@@ -74,16 +77,10 @@ Define model candidates using pre-test information. An audit over the future tes
 
 ## Run checks
 
-Base environment (tuning-specific tests are skipped if its optional dependencies are absent):
+Run the full suite, including model-tuning tests, in the shared environment:
 
 ```bash
 uv run --locked --python 3.12 python -m unittest discover -s tests -v
-```
-
-Full environment:
-
-```bash
-uv run --locked --extra tuning --python 3.12 python -m unittest discover -s tests -v
 ```
 
 For workflow details, use the [data-mining README](data_mining/README.md) or [tuning README](model_tuning/README.md). The `doc/` guides explain formulas, configuration effects, examples, and interpretation limits.

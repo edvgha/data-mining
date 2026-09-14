@@ -1117,6 +1117,8 @@ Row/class counts, schema checks, dtype, missingness, uniqueness, dominance, flag
 | `ignore` | Empty list | Columns validated in the schema but not read for analysis |
 | `output_dir` | `report` | Output root, relative to config location if not absolute |
 
+Run `uv sync --locked` from the repository root to install the shared dependencies for analysis and model tuning, including Optuna and XGBoost.
+
 The input file path and config path are the two command-line inputs:
 
 ```bash

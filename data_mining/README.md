@@ -41,6 +41,8 @@ uv sync --locked
 uv run --locked -m data_mining /path/to/data.parquet config.yaml
 ```
 
+`uv sync --locked` installs the shared environment for data mining and model tuning, including Optuna and XGBoost.
+
 Or use the same two-input Python interface:
 
 ```python
@@ -397,4 +399,4 @@ There is no network lookup during an audit and no requirement for XGBoost,
 SHAP or a database at this stage.
 
 
-For environment modes and the tuning demo, see the [project overview](../README.md).
+For environment setup and the tuning demo, see the [project overview](../README.md).

@@ -2,15 +2,15 @@
 
 Tune a native `xgboost.Booster` with Optuna from a local Parquet file and YAML config. All fitting uses `xgboost.train` and `DMatrix`. The existing sklearn dependency supplies ranking metrics only; there is no sklearn model or preprocessing API in this workflow.
 
-See [Model tuning and techniques: mathematics and interpretation](../doc/model-tuning-and-techniques.md) for the chronological selection procedure, XGBoost objective, search controls, bootstrap formulas, metric definitions, worked examples, and report interpretation. See the [project README](../README.md) for environment modes and both demos.
+See [Model tuning and techniques: mathematics and interpretation](../doc/model-tuning-and-techniques.md) for the chronological selection procedure, XGBoost objective, search controls, bootstrap formulas, metric definitions, worked examples, and report interpretation. See the [project README](../README.md) for environment setup and both demos.
 
 ## Run the shared demo
 
-Run from the repository root, where `pyproject.toml` lives:
+Run from the repository root, where `pyproject.toml` lives. Optuna and XGBoost are included in the standard project dependencies:
 
 ```bash
-uv sync --locked --extra tuning --python 3.12
-uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+uv sync --locked --python 3.12
+uv run --locked --python 3.12 python -m model_tuning \
   demo/data.parquet demo/model_tuning.yaml
 ```
 
@@ -21,7 +21,7 @@ Open the absolute path printed after `Report:`. This config saves a new run unde
 ## Run with your data
 
 ```bash
-uv run --locked --extra tuning --python 3.12 python -m model_tuning \
+uv run --locked --python 3.12 python -m model_tuning \
   /path/to/data.parquet model_tuning/config.yaml
 ```
 
@@ -72,7 +72,7 @@ This is in-memory CPU histogram training. Memory and runtime grow with dataset s
 | [`VALIDATION.json`](VALIDATION.json) | Historical validation and synthetic-demo results |
 
 ```bash
-uv run --locked --extra tuning --python 3.12 python -m unittest discover -s tests -v
+uv run --locked --python 3.12 python -m unittest discover -s tests -v
 ```
 
 The tests cover chronological leakage, exact metric arithmetic, bootstrap units, null and zero-click groups, model reload, and SHAP additivity. Changing only test labels must leave chosen parameters and predictions unchanged.
