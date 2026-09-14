@@ -382,7 +382,29 @@ and [ChunkedArray.to_pylist API](https://arrow.apache.org/docs/python/generated/
 
 ## Project files and tests
 
-- `data_mining/audit.py`: input validation, statistics, analysis pipeline and report writing.
+`audit.py` coordinates the workflow; each supporting module has one responsibility:
+
+| Module | Responsibility |
+|---|---|
+| [`audit.py`](audit.py) | Public `analyze()` entry point, CLI, diagnostics, and run summary |
+| [`config.py`](config.py) | Defaults and strict YAML configuration validation |
+| [`dataset.py`](dataset.py) | Parquet schema validation and Arrow-to-pandas conversion |
+| [`statistics.py`](statistics.py) | Statistical formulas and positive-rate tables |
+| [`profiling.py`](profiling.py) | Feature distributions, analysis buckets, and target associations |
+| [`relationships.py`](relationships.py) | Feature pairs, configured interactions, time context, and group summaries |
+| [`report.py`](report.py) | CSV/JSON/YAML artifacts, HTML charts, and Markdown report rendering |
+
+`analyze()` loads inputs, profiles features, analyzes relationships, applies decisions,
+and writes reports. Stage results use named dataclass fields. Sampling happens once;
+numeric and bucket-based comparisons share the same sampled rows. Report rendering
+uses the computed results rather than recalculating statistics.
+
+The Python API (`from data_mining import audit`), CLI commands, configuration schema,
+and report filenames are unchanged. Existing helper imports from `data_mining.audit`
+remain supported; new code can import directly from the owning module.
+
+Other project files:
+
 - `data_mining/settings.py`: metric registry and validated rule configuration.
 - `data_mining/decisions.py`: decision engine, precedence and evidence.
 - `demo/data.parquet`: saved 1-million-row synthetic example dataset.
@@ -395,8 +417,8 @@ and [ChunkedArray.to_pylist API](https://arrow.apache.org/docs/python/generated/
 uv run --locked -m unittest discover -s tests -v
 ```
 
-There is no network lookup during an audit and no requirement for XGBoost,
-SHAP or a database at this stage.
+There is no network lookup during an audit. The audit itself does not fit
+XGBoost models, compute SHAP values, or use a database.
 
 
 For environment setup and the tuning demo, see the [project overview](../README.md).

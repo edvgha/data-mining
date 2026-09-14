@@ -2,9 +2,15 @@
 
 This guide explains every statistic and screening technique implemented in **Data Mining**: what it measures, its formula, why it is useful, what can go wrong, and how it affects feature decisions.
 
-It describes the implementation at [commit e2238fb](https://github.com/edvgha/data-mining/tree/e2238fb214fed968bcf03f162fb31f39446d95b7), inspected on 2026-09-07. The implementation is the source of truth for calculation details:
+The statistical reference was originally checked against [commit e2238fb](https://github.com/edvgha/data-mining/tree/e2238fb214fed968bcf03f162fb31f39446d95b7) on 2026-09-07. The source map below follows the module refactor; formulas and report contents are unchanged. The implementation is the source of truth for calculation details:
 
-- [audit.py](../data_mining/audit.py): validation, sampling, statistics, bucketing, and reports.
+- [audit.py](../data_mining/audit.py): workflow orchestration, CLI, diagnostics, and run summary.
+- [config.py](../data_mining/config.py): defaults and YAML validation.
+- [dataset.py](../data_mining/dataset.py): schema validation and precision-preserving Parquet conversion.
+- [statistics.py](../data_mining/statistics.py): statistical formulas and positive-rate tables.
+- [profiling.py](../data_mining/profiling.py): distributions, bucketing, shared sampling, and feature-target metrics.
+- [relationships.py](../data_mining/relationships.py): pairs, interactions, temporal analysis, and group summaries.
+- [report.py](../data_mining/report.py): report files, HTML rendering, and charts.
 - [settings.py](../data_mining/settings.py): metric names and rule defaults.
 - [decisions.py](../data_mining/decisions.py): decisions, precedence, and evidence.
 - [demo/config.yaml](../demo/config.yaml): the supplied example configuration.
