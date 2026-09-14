@@ -346,7 +346,7 @@ This is a descriptive convention, not proof of data corruption. When IQR is zero
 
 ## 4. Categorical univariate statistics
 
-These summaries use the original observed categories **before pooling**. Let $n=N-\text{missing_count}$, with category counts $n_1,\ldots,n_K$ and $p_k=n_k/n$.
+These summaries use the original observed categories **before pooling**. Let $n=N-m$ be the nonmissing row count, where $N$ is the total row count and $m$ is `missing_count`. The observed category counts are $n_1,\ldots,n_K$, with $p_k=n_k/n$.
 
 ### 4.1 Entropy and effective number of levels — `entropy`
 
