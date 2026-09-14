@@ -147,7 +147,8 @@ class TuningIntegrationTests(unittest.TestCase):
                 self.assertEqual(proc.returncode, 0, proc.stdout+proc.stderr)
                 report = Path(next(x.removeprefix("Report: ") for x in proc.stdout.splitlines() if x.startswith("Report: ")))
                 out = report.parent
-                self.assertEqual(out.parent, root/"reports")
+                # The CLI resolves symlinks, including macOS /var -> /private/var.
+                self.assertEqual(out.parent, (root/"reports").resolve())
                 self.assertIn("<!doctype html>", report.read_text())
                 self.assertEqual(json.loads((out/"status.json").read_text())["status"], "complete")
                 summary = json.loads((out/"summary.json").read_text())
