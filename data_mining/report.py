@@ -104,6 +104,69 @@ def html_table(df, limit=100):
     )
 
 
+def categorical_diversity_table(profiles: pd.DataFrame) -> pd.DataFrame:
+    """Label each enabled diversity metric with its feature-specific bounds.
+
+    K counts original nonmissing categories, before rare-category pooling.
+    Keep the numeric profile keys stable: different features can have different K.
+    """
+    rows = []
+    for profile in profiles.loc[profiles["type"] == "categorical"].to_dict("records"):
+        levels = int(profile["unique_nonmissing"])
+        bounds = {
+            "entropy_nats_nonmissing": (0, np.log(levels)) if levels else None,
+            "effective_levels_nonmissing": (1, levels) if levels else None,
+        }
+        for metric, limits in bounds.items():
+            if metric not in profile:
+                continue  # The entropy statistic may be disabled.
+            interval = f"{limits[0]:.6g}, {limits[1]:.6g}" if limits else "undefined, undefined"
+            rows.append(
+                {
+                    "feature": profile["feature"],
+                    "metric": f"{metric} {{{interval}}}",
+                    "value": profile[metric],
+                }
+            )
+    return pd.DataFrame(rows, columns=["feature", "metric", "value"])
+
+
+def _categorical_diversity_html(profiles: pd.DataFrame) -> str:
+    table = categorical_diversity_table(profiles)
+    if table.empty:
+        return ""
+    return (
+        "<h3>Entropy and effective levels with bounds</h3>"
+        "<p>Labels show {minimum, maximum} for each feature's original nonmissing "
+        "category count K, before pooling. Entropy ranges from 0 to ln(K) nats; "
+        "effective levels range from 1 to K. Bounds are displayed to six significant "
+        "digits. Values and bounds are undefined when K = 0.</p>" + html_table(table, len(table))
+    )
+
+
+def _categorical_diversity_markdown(profiles: pd.DataFrame) -> list[str]:
+    table = categorical_diversity_table(profiles)
+    if table.empty:
+        return []
+    lines = [
+        "\n## Entropy and effective levels with bounds\n",
+        "Labels show {minimum, maximum} using the original nonmissing category count "
+        "K, before pooling. Entropy ranges from 0 to ln(K) nats; effective levels "
+        "range from 1 to K. Displayed values and bounds use six significant digits. "
+        "Values and bounds are undefined when K = 0.\n",
+        "| Feature | Metric {minimum, maximum} | Value |",
+        "|---|---|---:|",
+    ]
+    for row in table.itertuples(index=False):
+        name = html.escape(str(row.feature))
+        for char in ["\\", "|", "`", "*", "_"]:
+            name = name.replace(char, "\\" + char)
+        name = name.replace("\n", " ").replace("\r", " ")
+        value = f"{row.value:.6g}" if np.isfinite(row.value) else "undefined"
+        lines.append(f"| {name} | `{row.metric}` | {value} |")
+    return lines
+
+
 def save_json(path, value):
     def clean(x):
         if isinstance(x, dict):
@@ -131,6 +194,9 @@ def _write_tables(out: Path, result: AuditReport) -> None:
         if not subset.empty:
             subset = subset.dropna(axis=1, how="all")
         subset.to_csv(out / f"{kind}_univariate.csv", index=False)
+    categorical_diversity_table(result.features.profiles).to_csv(
+        out / "categorical_diversity.csv", index=False
+    )
     result.features.target_associations.to_csv(out / "feature_target.csv", index=False)
     result.decisions.to_csv(out / "feature_decisions.csv", index=False)
     result.rule_evaluations.to_csv(out / "rule_evaluations.csv", index=False)
@@ -231,10 +297,13 @@ def _render_html(result: AuditReport) -> str:
         ),
         "<h2>2. Categorical univariate</h2>"
         + html_table(
-            result.features.profiles[result.features.profiles["type"] == "categorical"].dropna(
-                axis=1, how="all"
+            result.features.profiles[result.features.profiles["type"] == "categorical"]
+            .drop(
+                columns=["entropy_nats_nonmissing", "effective_levels_nonmissing"], errors="ignore"
             )
-        ),
+            .dropna(axis=1, how="all")
+        )
+        + _categorical_diversity_html(result.features.profiles),
         "<h2>3. Feature–target associations</h2><p>Sorted by empirical binned/pooled MI in nats when enabled, otherwise config order. "
         "This is an exploratory association ordering, not a validated feature ranking. "
         "Raw numeric AUC treats the column itself as a score; it misses nonmonotonic effects and is not a fitted model score.</p>"
@@ -292,7 +361,7 @@ def _render_html(result: AuditReport) -> str:
 
 
 def _render_markdown(result: AuditReport) -> str:
-    """Render feature decisions and interpretation notes as plain Markdown."""
+    """Render decisions, categorical diversity, and interpretation as Markdown."""
     # Markdown includes full reasons without requiring the HTML viewer.
     lines = [
         "# Data Mining",
@@ -302,10 +371,11 @@ def _render_markdown(result: AuditReport) -> str:
     ]
     for row in result.decisions.to_dict("records"):
         lines.append(f"- **{row['feature']} — {row['decision'].upper()}**: {row['reason']}")
+    lines += _categorical_diversity_markdown(result.features.profiles)
     lines += ["\n## Interpretation\n"] + [f"- {note}" for note in result.summary["limitations"]]
     lines += [
         "\n## Report files\n",
-        "See feature_target.csv, feature_pairs.csv, joint_information.csv, "
+        "See categorical_diversity.csv, feature_target.csv, feature_pairs.csv, joint_information.csv, "
         "rule_evaluations.csv and the other CSV tables for exact values. The HTML report includes enabled positive-class rate plots.\n",
     ]
     return "\n".join(lines).rstrip() + "\n"
