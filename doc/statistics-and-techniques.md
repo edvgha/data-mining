@@ -742,7 +742,19 @@ $$
 
 The output is `cramers_v_corrected`. The correction reduces finite-sample inflation in nominal association; see [Bergsma's original paper](https://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf).
 
-It is an unsigned association measure on a 0-to-1 scale when defined. Zero can result from the correction truncating a small estimated association. It does not prove population independence.
+**`cramers_v_corrected` measures the strength of association between your feature's buckets and the target, after adjusting for association caused by finite-sample noise.**
+
+When defined, it uses a **0–1 scale**:
+
+| Value | Interpretation |
+|---|---|
+| **0** | The corrected estimate finds no association. Small observed differences may have been removed by the correction. |
+| **Close to 0** | Weak overall association in this bucket representation. |
+| **Closer to 1** | Stronger association: knowing the bucket provides more information about the target. |
+| **1** | Maximum association on this scale. |
+| **`NaN`** | The statistic is undefined under its formula, for example because the table is degenerate or the corrected denominator is nonpositive. |
+
+The measure is unsigned. A corrected value of zero does not prove population independence.
 
 The implementation returns undefined when $n\le1$, a dimension has fewer than two observed levels, or the corrected denominator is nonpositive. It can still report V when the chi-square p-value is suppressed: a descriptive effect-size calculation and a valid hypothesis test are different requirements.
 
