@@ -37,11 +37,14 @@ def bh_adjust(pvalues):
 
 def table_association(table):
     """Empirical MI (nats), corrected Cramer's V, and an eligible chi-square p."""
+    #         negative, positive
+    #  Mobile    80        20
+    #  Desktop   20        80
     a = np.asarray(table, dtype=float)
-    a = a[a.sum(axis=1) > 0]
-    a = a[:, a.sum(axis=0) > 0]
-    n = a.sum()
-    r, c = a.shape
+    a = a[a.sum(axis=1) > 0] # Total observations in each row
+    a = a[:, a.sum(axis=0) > 0] # Total observations in each column
+    n = a.sum() # Total observations
+    r, c = a.shape # r: Observed buckets, c: Observed target outcomes
     if n <= 1 or min(r, c) < 2:
         return {
             "mi_nats": 0.0,
@@ -49,11 +52,19 @@ def table_association(table):
             "chi2_p_iid": np.nan,
             "min_expected_count": np.nan,
         }
+    # Is the feature independent of the target?
+    # expected: expected cell counts under independence
     chi, p, _, expected = stats.chi2_contingency(a, correction=False)
     probs = a / n
     independent = np.outer(probs.sum(axis=1), probs.sum(axis=0))
     mask = probs > 0
+    # I(B;Y)=H(Y)−H(Y∣B)
+    # H(Y): target entropy, before knowing the device
+    # H(Y|B): average target entropy, after knowing the device
     mi = float(np.sum(probs[mask] * np.log(probs[mask] / independent[mask])))
+
+    # cramers_v_corrected measures the strength of association between your feature’s buckets and the target, 
+    # after adjusting for association caused by finite-sample noise.
     phi = max(0.0, chi / n - (r - 1) * (c - 1) / (n - 1))
     den = min(r - (r - 1) ** 2 / (n - 1) - 1, c - (c - 1) ** 2 / (n - 1) - 1)
     v = math.sqrt(phi / den) if den > 0 else np.nan
