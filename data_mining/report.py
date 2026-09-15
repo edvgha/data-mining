@@ -4,8 +4,8 @@ import base64
 import html
 import io
 import json
+import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
@@ -16,9 +16,13 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from run_logging import create_run_directory
+
 from .profiling import FeatureAnalysis
 from .relationships import InteractionAnalysis, TemporalAnalysis
 from .settings import enabled
+
+logger = logging.getLogger(__name__)
 
 HTML_HEADER = """<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Data Mining</title><style>
@@ -311,7 +315,7 @@ def _render_html(result: AuditReport) -> str:
     ]
     for i, name in enumerate(result.config["features"], 1):
         if enabled(result.config, "positive_rate"):
-            print(f"  Plot [{i}/{len(result.config['features'])}]: {name}", flush=True)
+            logger.debug("Plot [%s/%s]: %s", i, len(result.config["features"]), name)
             sections.append(
                 f"<details><summary>{html.escape(name)} — {result.config['features'][name]}</summary>"
                 + plot_positive_rate(
@@ -381,16 +385,14 @@ def _render_markdown(result: AuditReport) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def write_report(root: Path, result: AuditReport) -> Path:
-    """Create a fresh run directory and save every report format."""
-    run_id = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%S_%fZ")
-    out = root / run_id
-    print(f"Writing report tables: {out}", flush=True)
-    out.mkdir(parents=True, exist_ok=False)
+def write_report(root: Path, result: AuditReport, *, run_dir: Path | None = None) -> Path:
+    """Save reports in the active run, or allocate a directory for direct callers."""
+    out = run_dir if run_dir is not None else create_run_directory(root)
+    logger.info("Writing report tables: %s", out)
     _write_tables(out, result)
-    print("Rendering HTML report...", flush=True)
+    logger.info("Rendering HTML report...")
     (out / "report.html").write_text(_render_html(result))
     (out / "report.md").write_text(_render_markdown(result))
-    print(f"Report: {out / 'report.html'}", flush=True)
-    print("Analysis complete. Open the report.html file above in your browser.", flush=True)
+    logger.info("Report: %s", out / "report.html")
+    logger.info("Analysis complete. Open the report.html file above in your browser.")
     return out

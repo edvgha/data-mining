@@ -721,10 +721,13 @@ If quantile binning produces no usable bins (for example, constant predictions),
 | `config.yaml` | Resolved config, including defaults and absolute output directory |
 | `summary.json` | Selected trial, test metrics, data metadata, split metadata, versions, and run notes |
 | `status.json` | `running`, `complete`, or `failed` after the run directory has been created |
+| `run.log` | Application and Optuna logs with UTC timestamps, severity, and logger names; includes failures at `ERROR` |
 | `test_predictions.parquet` (optional) | Test time, target, group columns, and `__predicted_probability__` |
 | `*.png` | Separate copies of the plots embedded in HTML |
 
-A unique `run_<UTC timestamp>_<suffix>` directory prevents overwriting earlier runs. Failures after directory creation can leave partial artifacts and a failed status; validation failures before creation do not produce a run directory. A model file alone does not mean the report completed.
+A unique `run_<UTC timestamp>_<suffix>` directory prevents overwriting earlier runs. After configuration validation, the directory, log, config, and running status are created before data loading. Data-validation or later failures leave partial artifacts, a failed status, and an error traceback in the log when its level permits `ERROR`. Configuration failures or an unwritable output directory are reported on the console before file logging starts. A model file alone does not mean the report completed.
+
+Logging defaults to `INFO` on the console (stderr) and `DEBUG` in `run.log`. YAML `logging.console_level` / `logging.file_level` configure the thresholds; CLI `--log-level` / `--file-log-level` override them. Optuna messages use the same handlers. See the [logging reference](../README.md#logging).
 
 `summary.json` records source path, file size, modification time, and row count, not a cryptographic content hash. Retain the input file/version separately for exact provenance. `study.sqlite3` is saved for inspection, but the CLI does not automatically resume it. Input/output data stay local during execution; dependency installation may require network access.
 
@@ -754,6 +757,7 @@ Only configured feature columns are needed for this inference helper; target and
 | `features` | Required nonempty mapping | Explicit `numerical`/`categorical` model candidates |
 | `group_by` | `[]` | Joint column list or list of column lists; no target grouping |
 | `output_dir` | `../report/model_tuning` | Resolved relative to the YAML directory |
+| `logging` | `{console_level: INFO, file_level: DEBUG}` | Independent thresholds: DEBUG, INFO, WARNING, ERROR, or CRITICAL; CLI flags override each field |
 | `seed` | `42` | Integer in `[0, 2**32-1]`; model, search, and sampling reproducibility |
 | `nthread` | `4` | Positive integer CPU threads for native fits/matrices |
 | `split` | Defaults below | Chronological boundaries and identity isolation |
@@ -761,7 +765,7 @@ Only configured feature columns are needed for this inference helper; target and
 | `bootstrap` | Defaults below | Resampling units, intervals, and training refits |
 | `report` | Defaults below | Explanation sample and support/output controls |
 
-Nested `split`, `tuning`, `bootstrap`, and `report` mappings merge with their field defaults. `tuning.params` and `tuning.search_space` are supplied as complete mappings; the search space is not merged parameter by parameter with its default.
+Nested `split`, `tuning`, `bootstrap`, `report`, and `logging` mappings merge with their field defaults. `tuning.params` and `tuning.search_space` are supplied as complete mappings; the search space is not merged parameter by parameter with its default.
 
 ### 11.2 Time controls
 

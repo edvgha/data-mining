@@ -142,11 +142,27 @@ class TuningIntegrationTests(unittest.TestCase):
                 if flipped:
                     altered.loc[altered.date >= altered.date.unique()[64], "clicked"] = 1-altered.clicked
                 altered.to_parquet(data, index=False)
-                proc = subprocess.run([sys.executable, "-m", "model_tuning", str(data), str(config)],
+                before = set((root/"reports").glob("run_*"))
+                flags = ["--log-level", "ERROR"] if flipped else []
+                proc = subprocess.run([sys.executable, "-m", "model_tuning", str(data), str(config), *flags],
                                       text=True, capture_output=True, timeout=120)
                 self.assertEqual(proc.returncode, 0, proc.stdout+proc.stderr)
-                report = Path(next(x.removeprefix("Report: ") for x in proc.stdout.splitlines() if x.startswith("Report: ")))
-                out = report.parent
+                self.assertEqual(proc.stdout, "")
+                created = set((root/"reports").glob("run_*")) - before
+                self.assertEqual(len(created), 1)
+                out = created.pop().resolve()
+                report = out / "report.html"
+                log = (out/"run.log").read_text()
+                self.assertEqual(log.count("Trial 0 finished"), 1)
+                self.assertIn("DEBUG model_tuning.pipeline: Trial 0 parameters", log)
+                self.assertIn(f"Report: {report.resolve()}", log)
+                if flipped:
+                    self.assertEqual(proc.stderr, "")
+                else:
+                    self.assertIn(f"Report: {report.resolve()}", proc.stderr)
+                    self.assertEqual(proc.stderr.count("Trial 0 finished"), 1)
+                effective = yaml.safe_load((out/"config.yaml").read_text())["logging"]
+                self.assertEqual(effective["console_level"], "ERROR" if flipped else "INFO")
                 # The CLI resolves symlinks, including macOS /var -> /private/var.
                 self.assertEqual(out.parent, (root/"reports").resolve())
                 self.assertIn("<!doctype html>", report.read_text())

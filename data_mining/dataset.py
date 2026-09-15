@@ -1,11 +1,14 @@
 """Read and validate local Parquet files while preserving Arrow value precision."""
 
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+logger = logging.getLogger(__name__)
 
 
 def dataframe_from_arrow(table):
@@ -15,9 +18,12 @@ def dataframe_from_arrow(table):
     }
     data = {}
     for i, (field, column) in enumerate(zip(table.schema, table.columns), 1):
-        print(
-            f"  Converting column [{i}/{table.num_columns}]: {field.name} ({field.type})...",
-            flush=True,
+        logger.debug(
+            "Converting column [%s/%s]: %s (%s)...",
+            i,
+            table.num_columns,
+            field.name,
+            field.type,
         )
         if pa.types.is_timestamp(field.type):
             # Keep exact epoch ticks; converting nullable integers to float64
@@ -78,15 +84,16 @@ def read_dataset(path: str | Path, cfg: dict):
     path = Path(path)
     if path.suffix.lower() != ".parquet" or not path.is_file():
         raise ValueError("dataset must be an existing .parquet file.")
-    print("  Opening Parquet metadata...", flush=True)
+    logger.debug("Opening Parquet metadata...")
     # This API accepts one local file. Avoid the dataset scanner, background
     # read-ahead, and threaded decoding.
     with pq.ParquetFile(path, pre_buffer=False) as parquet:
         columns = parquet.schema_arrow.names
-        print(
-            f"  Metadata: {parquet.metadata.num_rows:,} rows; {len(columns)} columns; "
-            f"{parquet.num_row_groups} row groups.",
-            flush=True,
+        logger.debug(
+            "Metadata: %s rows; %s columns; %s row groups.",
+            parquet.metadata.num_rows,
+            len(columns),
+            parquet.num_row_groups,
         )
         if len(columns) != len(set(columns)):
             raise ValueError("Parquet contains duplicate column names.")
@@ -106,20 +113,20 @@ def read_dataset(path: str | Path, cfg: dict):
         # Read configured physical columns. A stored pandas index is not restored;
         # it can be declared as an ordinary feature/context column or ignored.
         selected = [x for x in columns if x in declared and x not in cfg["ignore"]]
-        print(f"  Reading {len(selected)} selected columns (single thread)...", flush=True)
+        logger.debug("Reading %s selected columns (single thread)...", len(selected))
         table = parquet.read(columns=selected, use_threads=False)
-    print("  Building pandas DataFrame column by column...", flush=True)
+    logger.debug("Building pandas DataFrame column by column...")
     df = dataframe_from_arrow(table)
     del table
     if df.empty:
         raise ValueError("Dataset is empty.")
-    print(f"  Validating target: {cfg['target']}...", flush=True)
+    logger.debug("Validating target: %s...", cfg["target"])
     y = df[cfg["target"]]
     if y.isna().any() or not y.isin([0, 1]).all():
         raise ValueError("Target must contain only 0 and 1, with no missing values.")
     if y.nunique() != 2:
         raise ValueError("Both target classes must be present for association analysis.")
-    print(f"  Validating {len(cfg['features'])} feature dtypes...", flush=True)
+    logger.debug("Validating %s feature dtypes...", len(cfg["features"]))
     for name, kind in cfg["features"].items():
         s = df[name]
         if kind == "numerical" and (

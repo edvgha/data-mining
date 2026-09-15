@@ -1,19 +1,31 @@
 """Chronological native-API tuning and final refit."""
-from datetime import datetime, timezone
+import gc
+import logging
+import platform
 from importlib.metadata import version
 from pathlib import Path
-import gc
-import platform
-import uuid
+
 import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
 import yaml
+
+from run_logging import create_run_directory, logging_settings, run_logging
+
 from .data import Encoder, read_data, split_data
-from .metrics import (aggregate_units, bootstrap_metrics, evaluate, group_evaluation,
-                      resample_totals, row_statistics, unit_codes)
+from .metrics import (
+    aggregate_units,
+    bootstrap_metrics,
+    evaluate,
+    group_evaluation,
+    resample_totals,
+    row_statistics,
+    unit_codes,
+)
 from .report import save_json, write_report
+
+logger = logging.getLogger(__name__)
 
 
 def base_params(cfg):
@@ -40,25 +52,36 @@ def train_early(params, fit, early, cfg):
     return model.best_iteration+1, history
 
 
-def run(data_path, cfg):
-    print("Reading and validating Parquet...", flush=True)
-    frame = read_data(data_path, cfg)
-    parts, split_summary = split_data(frame, cfg)
-    for row in split_summary["partitions"]:
-        print(f"  {row['split']}: {row['rows']:,} rows, {row['actual_clicks']:,} positives; {row['start']} to {row['end']}", flush=True)
-    for name in ["train", "validation", "test"]:
-        count = len(np.unique(unit_codes(parts[name], cfg)))
-        if name != "test" and count < 2:
-            raise ValueError(f"{name} needs at least two bootstrap units; adjust time_frequency or sampling method.")
-    out = Path(cfg["output_dir"]) / (datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S_")+uuid.uuid4().hex[:8])
-    out.mkdir(parents=True)
-    (out/"config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
-    save_json(out/"status.json", {"status": "running"})
-    try:
-        return _fit(data_path, cfg, frame, parts, split_summary, out)
-    except BaseException as exc:
-        save_json(out/"status.json", {"status": "failed", "error": str(exc)})
-        raise
+def run(data_path, cfg, *, log_level=None, file_log_level=None):
+    cfg = {**cfg, "logging": logging_settings(
+        cfg.get("logging", {}), log_level=log_level, file_log_level=file_log_level
+    )}
+    out = create_run_directory(cfg["output_dir"])
+    with run_logging(out, cfg["logging"], "model_tuning", "optuna"):
+        logger.info("Output directory: %s", out)
+        logger.debug("Runtime: Python %s; XGBoost %s; Optuna %s.",
+                     platform.python_version(), xgb.__version__, optuna.__version__)
+        try:
+            (out/"config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
+            save_json(out/"status.json", {"status": "running"})
+            logger.info("Reading and validating Parquet: %s", Path(data_path).resolve())
+            frame = read_data(data_path, cfg)
+            parts, split_summary = split_data(frame, cfg)
+            for row in split_summary["partitions"]:
+                logger.info("%s: %s rows, %s positives; %s to %s", row["split"], row["rows"],
+                            row["actual_clicks"], row["start"], row["end"])
+            for name in ["train", "validation", "test"]:
+                count = len(np.unique(unit_codes(parts[name], cfg)))
+                if name != "test" and count < 2:
+                    raise ValueError(f"{name} needs at least two bootstrap units; adjust time_frequency or sampling method.")
+            _fit(data_path, cfg, frame, parts, split_summary, out)
+            logger.info("Report: %s", out / "report.html")
+            logger.info("Model: %s", out / "model.ubj")
+            logger.info("Model tuning complete.")
+            return out
+        except BaseException as exc:
+            save_json(out/"status.json", {"status": "failed", "error": str(exc)})
+            raise
 
 
 def _fit(data_path, cfg, frame, parts, split_summary, out):
@@ -77,6 +100,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
                                 storage=f"sqlite:///{out / 'study.sqlite3'}", study_name="binary_xgboost")
     def objective(trial):
         params = {**base_params(cfg), **suggest(trial, t["search_space"])}
+        logger.debug("Trial %s parameters: %s", trial.number, params)
         rounds, _ = train_early(params, fit, early, cfg)
         candidate = xgb.train(params, train, num_boost_round=rounds, verbose_eval=False)
         pred = candidate.predict(validation)
@@ -89,7 +113,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
         trial.set_user_attr("bootstrap_logloss_mean", float(losses.mean()))
         trial.set_user_attr("bootstrap_logloss_std", sd)
         return loss + t["stability_penalty"]*sd
-    print(f"Tuning {t['n_trials']} trials; final test period is held out...", flush=True)
+    logger.info("Tuning %s trials; final test period is held out...", t["n_trials"])
     study.optimize(objective, n_trials=t["n_trials"], timeout=t["timeout_seconds"], n_jobs=1,
                    gc_after_trial=True, show_progress_bar=False)
     best = study.best_trial
@@ -101,7 +125,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
     validation_metrics = {"dataset": "validation (selection)", **evaluate(validation_y, validation_pred, train_rate)}
     del fit, early, train, validation, selected, early_encoder, train_encoder
     gc.collect()
-    print(f"Refitting trial {best.number}, {rounds} boosting rounds on train + validation...", flush=True)
+    logger.info("Refitting trial %s, %s boosting rounds on train + validation...", best.number, rounds)
     refit_frame = pd.concat([parts["train"], parts["validation"]], ignore_index=True)
     encoder = Encoder(cfg["features"]).fit(refit_frame)
     refit = encoder.matrix(refit_frame, target, threads)
@@ -114,7 +138,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
     y = parts["test"][target].to_numpy()
     overall = pd.DataFrame([validation_metrics, {"dataset": "test (held out)", **evaluate(y, prediction, refit_rate)},
                             {"dataset": "test constant refit-rate baseline", **evaluate(y, np.full(len(y), refit_rate), refit_rate)}])
-    print("Computing bootstrap intervals and group calibration...", flush=True)
+    logger.info("Computing bootstrap intervals and group calibration...")
     intervals = bootstrap_metrics(parts["test"], y, prediction, refit_rate, cfg)
     groups = group_evaluation(parts["test"], prediction, refit_rate, cfg)
     stability = []
@@ -123,11 +147,12 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
     rng = np.random.default_rng(cfg["seed"]+1)
     refit_y = refit_frame[target].to_numpy()
     for repeat in range(b["training_repeats"]):
-        print(f"Training bootstrap refit {repeat+1}/{b['training_repeats']}...", flush=True)
+        logger.debug("Training bootstrap refit %s/%s...", repeat + 1, b["training_repeats"])
         counts = rng.multinomial(unit_count, np.full(unit_count, 1/unit_count))
         weights = counts[train_codes].astype(np.float32)
         weighted_rate = float(np.average(refit_y, weights=weights))
         if weighted_rate in (0., 1.):
+            logger.warning("Skipping bootstrap refit %s: resample contains only one class.", repeat + 1)
             stability.append({"repeat": repeat, "status": "skipped_single_class_resample"})
             continue
         refit.set_weight(weights)
@@ -138,7 +163,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
         del replica
     refit.set_weight(np.array([], dtype=np.float32))
     stability = pd.DataFrame(stability, columns=None if stability else ["repeat", "status"])
-    print("Computing native TreeSHAP and feature importance...", flush=True)
+    logger.info("Computing native TreeSHAP and feature importance...")
     sample = np.sort(np.random.default_rng(cfg["seed"]).choice(len(y), min(len(y), cfg["report"]["shap_rows"]), replace=False))
     shap_frame = parts["test"].iloc[sample].copy()
     shap_matrix = encoder.matrix(shap_frame, nthread=threads)
@@ -190,6 +215,7 @@ def _fit(data_path, cfg, frame, parts, split_summary, out):
             raise ValueError("Reserved prediction column __predicted_probability__ already exists.")
         output["__predicted_probability__"] = prediction
         output.to_parquet(out/"test_predictions.parquet", index=False)
+    logger.info("Writing report tables and rendering plots: %s", out)
     write_report(out, summary, overall, intervals, groups, study.trials_dataframe(), importance,
                  shap_values, shap_features, history, parts["test"], prediction, cfg, stability)
     save_json(out/"status.json", {"status": "complete"})

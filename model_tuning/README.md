@@ -16,7 +16,7 @@ uv run --locked --python 3.12 python -m model_tuning \
 
 All demo inputs are in the top-level [`demo/`](../demo/) directory. [`model_tuning.yaml`](../demo/model_tuning.yaml) uses the same million-row [`data.parquet`](../demo/data.parquet) as the data-mining demo, with its own feature list and tuning settings.
 
-Open the absolute path printed after `Report:`. This config saves a new run under `report/model_tuning/`. The report includes overall/group metrics, bootstrap diagnostics, optimization and learning curves, calibration/time plots, and SHAP/gain importance.
+Open the absolute path logged after `Report:`. This config saves a new run under `report/model_tuning/`. The report includes overall/group metrics, bootstrap diagnostics, optimization and learning curves, calibration/time plots, and SHAP/gain importance.
 
 ## Run with your data
 
@@ -31,6 +31,25 @@ The template's feature list is a starting point, not a validated selection. It o
 
 Data paths are relative to the current working directory. `output_dir` is relative to the config file; update it when moving or copying a config. The input must be unweighted binary population data if expected clicks are to represent population counts.
 
+## Logging
+
+Progress and Optuna trial messages go to the console (stderr) at `INFO` and to
+`run.log` in the run directory at `DEBUG` by default. Configure either threshold:
+
+```yaml
+logging:
+  console_level: INFO
+  file_level: DEBUG
+```
+
+Use `--log-level WARNING` to quiet the console while preserving detailed file
+logs, or `--file-log-level INFO` to reduce file detail. Both flags override YAML
+settings for the run. The saved `config.yaml` records the effective values.
+The run directory, config, status, and log are created before data loading;
+input failures therefore leave a log and a failed `status.json`. Errors before
+logging can start, such as invalid YAML or output-directory permissions, appear
+on the console. See the [shared logging reference](../README.md#logging).
+
 ## What the workflow does
 
 1. Splits distinct timestamps into train, validation, and test periods, with an inner training tail for early stopping. Optional explicit cutoffs, embargo gaps, and strict session/entity-overlap checks are supported.
@@ -43,7 +62,7 @@ The z-score assumes independent Bernoulli outcomes. Metric intervals are conditi
 
 ## Saved outputs and inference
 
-Each successful run includes `report.html`, CSV/JSON tables, `study.sqlite3`, `model.ubj`, and `encoder.json`. Images are embedded in the HTML; keep the full run directory for linked tables and model artifacts. Predictions are optional via `report.save_predictions`. See the [artifact reference](../doc/model-tuning-and-techniques.md#10-reports-and-saved-artifacts) for the complete list.
+Each successful run includes `run.log`, `report.html`, CSV/JSON tables, `study.sqlite3`, `model.ubj`, and `encoder.json`. Images are embedded in the HTML; keep the full run directory for linked tables and model artifacts. Predictions are optional via `report.save_predictions`. See the [artifact reference](../doc/model-tuning-and-techniques.md#10-reports-and-saved-artifacts) for the complete list.
 
 Use the encoder saved with the model for future rows:
 
@@ -66,6 +85,7 @@ This is in-memory CPU histogram training. Memory and runtime grow with dataset s
 | [`config.py`](config.py) | Defaults, supported parameters, and config validation |
 | [`data.py`](data.py) | Parquet loading, temporal partitions, and fitted encoding |
 | [`pipeline.py`](pipeline.py) | Optuna trials, early stopping, final refit, and explanations |
+| [`run_logging.py`](../run_logging.py) | Shared console/file logging and logging-level validation |
 | [`metrics.py`](metrics.py) | Probability metrics, bootstrap statistics, and group evaluation |
 | [`report.py`](report.py) | HTML, plots, CSVs, and JSON serialization |
 | [`predict.py`](predict.py) | Reload model plus encoder for inference |

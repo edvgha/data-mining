@@ -11,7 +11,7 @@ import yaml
 
 
 class CliTests(unittest.TestCase):
-    def test_module_command_writes_report_at_printed_config_relative_path(self):
+    def test_module_command_logs_report_at_config_relative_path(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve()
             inputs = root / "inputs"
@@ -39,15 +39,21 @@ class CliTests(unittest.TestCase):
                 capture_output=True, text=True, timeout=60,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            paths = [line.removeprefix("Report: ") for line in result.stdout.splitlines()
-                     if line.startswith("Report: ")]
-            self.assertEqual(len(paths), 1, result.stdout)
+            self.assertEqual(result.stdout, "")
+            paths = [line.split("Report: ", 1)[1] for line in result.stderr.splitlines()
+                     if "Report: " in line]
+            self.assertEqual(len(paths), 1, result.stderr)
             report = Path(paths[0])
             self.assertEqual(report, report.resolve())
             self.assertEqual(report.parent.parent, root / "reports")
             self.assertEqual(report.name, "report.html")
             self.assertIn("<!doctype html>", report.read_text())
             self.assertTrue((report.parent / "report.md").is_file())
+            log = (report.parent / "run.log").read_text()
+            self.assertIn("DEBUG data_mining.dataset: Converting column", log)
+            self.assertNotIn("Converting column", result.stderr)
+            self.assertEqual(log.count("Report: "), 1)
+            self.assertIn("Diagnostics: Python stacks will be saved to run.log", log)
             summary = json.loads((report.parent / "summary.json").read_text())
             self.assertEqual(summary["rows"], 40)
             self.assertEqual(summary["features"], 2)
