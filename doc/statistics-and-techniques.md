@@ -522,6 +522,8 @@ $$
 
 The implementation clips the endpoints to $[0,1]$ and names them `positive_rate_low_iid` and `positive_rate_high_iid`.
 
+For the complete derivation of the denominator, center, and half-width, see [Wilson confidence interval: step-by-step derivation, intuition, and proofs](wilson-confidence-interval-proof.md). It includes the sampling-variance proof, each algebraic step, boundary and large-sample behavior, and a worked two-clicks-from-three-rows example.
+
 **Where it comes from:** invert the binomial score-test inequality
 
 $$

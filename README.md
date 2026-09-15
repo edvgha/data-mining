@@ -9,7 +9,7 @@ Two configurable workflows for binary classification datasets: inspect data and 
 | [`data_mining/`](data_mining/README.md) | Dataset validation, descriptive statistics, feature relationships, and configurable keep/review/exclude decisions. Runs an audit without fitting a model. |
 | [`model_tuning/`](model_tuning/README.md) | Optuna tuning with native XGBoost, chronological splits, bootstrap diagnostics, group evaluation, model export, and SHAP/gain explanations. |
 | [`demo/`](demo/) | All runnable demo inputs: one shared million-row synthetic Parquet and separate configs for analysis and tuning. |
-| [`doc/`](doc/) | Detailed mathematical references: [data-mining statistics](doc/statistics-and-techniques.md) and [model-tuning techniques](doc/model-tuning-and-techniques.md). |
+| [`doc/`](doc/) | Detailed mathematical references: [data-mining statistics](doc/statistics-and-techniques.md), [Wilson interval proof](doc/wilson-confidence-interval-proof.md), and [model-tuning techniques](doc/model-tuning-and-techniques.md). |
 | [`tests/`](tests/) | Formula, validation, leakage, model reload, and command-line integration checks. |
 | `report/` (generated) | Run-specific HTML reports, tables, and fitted models. Ignored by Git. |
 | [`pyproject.toml`](pyproject.toml), [`uv.lock`](uv.lock) | Python requirements, dependencies, and locked dependency versions. |
