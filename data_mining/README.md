@@ -286,17 +286,29 @@ be mixed with changed settings.
 | File | Contents |
 |---|---|
 | `report.html` | Self-contained report with feature decisions, exact reasons, tables, and enabled positive-class rate plots |
-| `report.md` | Readable per-feature decisions and interpretation notes |
+| `report.md` | Readable per-feature decisions, categorical diversity with bounds, and interpretation notes |
 | `feature_decisions.csv` / `.json` | One row/object per feature, final action, related columns, evidence values and reason |
 | `rule_evaluations.csv` | Every evaluated, disabled or skipped rule; numeric thresholds in JSON evidence |
 | `selected_features.json` | Keep + review candidates, excluded features and review list |
 | `numerical_univariate.csv`, `categorical_univariate.csv` | Full-data profiles and enabled summaries |
+| `categorical_diversity.csv` | Per-feature entropy and effective levels, with `{minimum, maximum}` in the metric labels |
 | `feature_target.csv` | Enabled target-association statistics |
 | `feature_pairs.csv` | Enabled numeric/categorical/mixed pair associations |
 | `joint_information.csv`, `joint_positive_rate/` | Configured multivariate diagnostics |
 | `feature_positive_rate/` | Enabled per-feature positive-class rate bucket tables |
 | `time_positive_rate.csv`, `time_feature_positive_rate/`, `time_feature_drift.csv` | Enabled temporal diagnostics |
 | `summary.json`, `manifest.json`, `bucket_dictionary.csv`, `config_used.yaml` | Row/sample/schema metadata, safe filename mappings, bucket labels and reproducible effective config |
+
+When `entropy` is enabled, the HTML and Markdown reports include labels such as
+`entropy_nats_nonmissing {0, 1.09861}` and `effective_levels_nonmissing {1, 3}`
+for a feature with three original nonmissing categories. The bounds are
+`{0, ln(K)}` and `{1, K}`, using the category count before pooling. A constant
+column has bounds `{0, 0}` and `{1, 1}`; an entirely missing column has undefined
+values and `{undefined, undefined}` bounds. Labels use six significant digits.
+The same table is saved in `categorical_diversity.csv` with `feature`, `metric`,
+and `value` columns. The numeric column names in `categorical_univariate.csv`
+remain stable. See [section 4.1 of the statistics guide](../doc/statistics-and-techniques.md#41-entropy-and-effective-number-of-levels--entropy)
+for worked examples of both ranges.
 
 ## One million-row demo
 

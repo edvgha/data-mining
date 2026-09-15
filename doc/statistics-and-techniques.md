@@ -361,6 +361,64 @@ Entropy measures uncertainty about the category of a randomly selected observed 
 
 For two equally frequent categories, $H=\ln2\approx0.6931$ and effective levels = 2. For proportions 0.99 and 0.01, $H\approx0.0560$ and effective levels $\approx1.0576$: almost all rows occupy one category.
 
+**Entropy range: $0\le H(X)\le\ln(K)$.**
+
+Here $K$ is `unique_nonmissing`: the number of original observed categories before pooling. These bounds apply when there is at least one nonmissing row ($K\ge1$).
+
+For counts `[40, 40, 20]`, there are three categories, so $K=3$ and their proportions are `[0.4, 0.4, 0.2]`:
+
+$$
+H(X)=-[0.4\ln(0.4)+0.4\ln(0.4)+0.2\ln(0.2)]
+\approx1.05492.
+$$
+
+The upper bound is $\ln(3)\approx1.09861$, so this example satisfies:
+
+$$
+0\le1.05492\le1.09861.
+$$
+
+The entropy is close to its maximum because the categories have fairly similar frequencies. Three equally frequent categories reach the maximum $H=\ln(3)$. A column with only one observed category has $K=1$ and $H=0$. When $K>1$ counts only observed categories, entropy is strictly positive, but it approaches zero as one category accounts for almost all rows.
+
+**Effective-level range: $1\le K_{\mathrm{effective}}\le K$.**
+
+Exponentiating the entropy bounds gives:
+
+$$
+\exp(0)\le\exp(H(X))\le\exp(\ln(K)),
+\qquad
+1\le K_{\mathrm{effective}}\le K.
+$$
+
+For the same `[40, 40, 20]` counts:
+
+$$
+K_{\mathrm{effective}}=\exp(H(X))\approx\exp(1.05492)\approx2.87175,
+\qquad
+1\le2.87175\le3.
+$$
+
+Although there are three observed categories, their uncertainty is equivalent to about 2.87 equally frequent categories. Effective levels equal $K$ exactly when all categories have equal proportions; a value close to $K$ indicates a distribution close to that maximum-entropy balance. Effective levels need not be an integer.
+
+| Category counts | Observed levels $K$ | Entropy $H(X)$, nats | Entropy bounds | Effective levels | Effective-level bounds |
+|---|---:|---:|---|---:|---|
+| `[100]` | 1 | 0 | 0 to 0 | 1 | 1 to 1 |
+| `[99, 1]` | 2 | 0.056002 | 0 to 0.693147 | 1.0576 | 1 to 2 |
+| `[50, 50]` | 2 | 0.693147 | 0 to 0.693147 | 2 | 1 to 2 |
+| `[40, 40, 20]` | 3 | 1.05492 | 0 to 1.09861 | 2.87175 | 1 to 3 |
+| `[30, 30, 30]` | 3 | 1.09861 | 0 to 1.09861 | 3 | 1 to 3 |
+
+**Report labels include each feature's bounds.** In `report.html`, `report.md`, and `categorical_diversity.csv`, the `[40, 40, 20]` example appears as:
+
+```text
+entropy_nats_nonmissing {0, 1.09861}: 1.05492
+effective_levels_nonmissing {1, 3}: 2.87175
+```
+
+The braces mean `{minimum, maximum}`. Each feature gets its own labels because $K$ can differ between columns. Bounds use the original category count, even if categories are later pooled into OTHER. Displayed numbers use six significant digits; CSV metric values retain their full calculation precision. The existing `categorical_univariate.csv` retains its stable numeric column names; `categorical_diversity.csv` stores the bounded labels as rows with `feature`, `metric`, and `value` columns.
+
+For an entirely missing column, $K=0$: there is no observed category distribution, and $\ln(0)$ is undefined. Both metric values are undefined (`NaN`), and both labels show `{undefined, undefined}`. Disabling `entropy` omits both metrics from these report tables.
+
 High entropy describes variety, not relevance to $Y$. A random identifier can have very high entropy.
 
 ### 4.2 Rare categories and singletons — `rare_categories`
@@ -1246,6 +1304,7 @@ Every run creates a fresh timestamped folder under `output_dir`.
 |---|---|
 | `numerical_univariate.csv` | Numerical quality and enabled distribution summaries |
 | `categorical_univariate.csv` | Original-category summaries, pooling metadata, and flags |
+| `categorical_diversity.csv` | Per-feature entropy and effective-level values with `{minimum, maximum}` in each metric label |
 | `feature_target.csv` | Full-data bucket association plus sampled numerical target metrics |
 | `feature_positive_rate/` | Per-feature bucket rates, lift, intervals, and support |
 | `feature_pairs.csv` | Sampled pair statistics and pair support |
@@ -1262,7 +1321,7 @@ Every run creates a fresh timestamped folder under `output_dir`.
 | `manifest.json` | Feature names mapped to safe output filenames; joint filename mapping |
 | `config_used.yaml` | Resolved effective configuration, including inherited defaults |
 | `report.html` | Self-contained decisions, tables, and enabled rate plots |
-| `report.md` | Readable final decisions and interpretation notes |
+| `report.md` | Readable final decisions, categorical diversity with bounds, and interpretation notes |
 
 Undefined numeric values are generally blank/NaN in CSV and `null` in JSON. Depending on the output, a disabled family may leave an empty table or an absent column rather than remove every related file.
 
