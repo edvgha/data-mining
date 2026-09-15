@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import faulthandler
+import logging
 import platform
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,14 @@ import pandas as pd
 import pyarrow as pa
 import scipy
 import yaml
+
+from run_logging import (
+    add_logging_arguments,
+    create_run_directory,
+    exit_with_error,
+    logging_settings,
+    run_logging,
+)
 
 from .config import DEFAULTS, UniqueKeyLoader, load_config
 from .dataset import dataframe_from_arrow, read_dataset
@@ -55,6 +64,8 @@ from .statistics import (
     wilson,
 )
 
+logger = logging.getLogger(__name__)
+
 # Preserve helper imports used by existing callers; implementations live in the
 # focused modules above. The package-level API remains `from data_mining import audit`.
 __all__ = [
@@ -83,69 +94,84 @@ __all__ = [
 ]
 
 
-def analyze(dataset: str | Path, config: str | Path, *, diagnostics: bool = False) -> Path:
+def analyze(
+    dataset: str | Path,
+    config: str | Path,
+    *,
+    diagnostics: bool = False,
+    log_level: str | None = None,
+    file_log_level: str | None = None,
+) -> Path:
     """Load inputs, run exploratory analysis stages, apply decisions, and write reports."""
-    print(f"Loading config: {Path(config).resolve()}", flush=True)
     cfg = load_config(config)
+    cfg["logging"] = logging_settings(
+        cfg["logging"], log_level=log_level, file_log_level=file_log_level
+    )
     root = Path(cfg["output_dir"])
     if not root.is_absolute():
         root = Path(config).resolve().parent / root
     root = root.resolve()
-    print(
-        f"Output directory: {root} (a fresh run_* folder is created when writing reports)",
-        flush=True,
-    )
-    print(f"Reading and validating Parquet: {Path(dataset).resolve()}", flush=True)
-    if diagnostics:
-        print(
-            f"Diagnostics: Python {platform.python_version()}; {platform.system()} {platform.machine()}; "
-            f"pandas {pd.__version__}; PyArrow {pa.__version__}.",
-            flush=True,
+    out = create_run_directory(root)
+    with run_logging(out, cfg["logging"], "data_mining") as log_stream:
+        logger.info("Loaded config: %s", Path(config).resolve())
+        logger.info("Output directory: %s", out)
+        (out / "config_used.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
+        logger.info("Reading and validating Parquet: %s", Path(dataset).resolve())
+        versions = logger.info if diagnostics else logger.debug
+        versions(
+            "Runtime: Python %s; %s %s; pandas %s; PyArrow %s.",
+            platform.python_version(),
+            platform.system(),
+            platform.machine(),
+            pd.__version__,
+            pa.__version__,
         )
-        print(
-            "Diagnostics: Python stacks will be printed every 30 seconds until input validation completes.",
-            flush=True,
-        )
-        faulthandler.dump_traceback_later(30, repeat=True)
-    try:
-        df, undeclared, schema_columns = read_dataset(dataset, cfg)
-    finally:
         if diagnostics:
-            faulthandler.cancel_dump_traceback_later()
-    features = profile_features(df, cfg)
-    pairs = analyze_pairs(features, cfg)
-    interactions = analyze_interactions(features, cfg)
-    temporal = analyze_temporal(df, features, cfg)
-    group_summary = summarize_groups(df, cfg)
+            logger.info(
+                "Diagnostics: Python stacks will be saved to run.log every 30 seconds "
+                "until input validation completes."
+            )
+            faulthandler.dump_traceback_later(30, repeat=True, file=log_stream)
+        try:
+            df, undeclared, schema_columns = read_dataset(dataset, cfg)
+        finally:
+            if diagnostics:
+                faulthandler.cancel_dump_traceback_later()
+        features = profile_features(df, cfg)
+        pairs = analyze_pairs(features, cfg)
+        interactions = analyze_interactions(features, cfg)
+        temporal = analyze_temporal(df, features, cfg)
+        group_summary = summarize_groups(df, cfg)
 
-    print("Evaluating feature selection rules...", flush=True)
-    decisions, rule_evaluations = decide(
-        features.profiles, features.target_associations, pairs, cfg
-    )
-    summary = _build_summary(
-        dataset=dataset,
-        cfg=cfg,
-        analysis=features,
-        pairs=pairs,
-        temporal=temporal,
-        group_summary=group_summary,
-        decisions=decisions,
-        undeclared=undeclared,
-        schema_columns=schema_columns,
-    )
-    return write_report(
-        root,
-        AuditReport(
-            config=cfg,
-            summary=summary,
-            features=features,
+        logger.info("Evaluating feature selection rules...")
+        decisions, rule_evaluations = decide(
+            features.profiles, features.target_associations, pairs, cfg
+        )
+        summary = _build_summary(
+            dataset=dataset,
+            cfg=cfg,
+            analysis=features,
             pairs=pairs,
-            interactions=interactions,
             temporal=temporal,
+            group_summary=group_summary,
             decisions=decisions,
-            rule_evaluations=rule_evaluations,
-        ),
-    )
+            undeclared=undeclared,
+            schema_columns=schema_columns,
+        )
+        return write_report(
+            root,
+            AuditReport(
+                config=cfg,
+                summary=summary,
+                features=features,
+                pairs=pairs,
+                interactions=interactions,
+                temporal=temporal,
+                decisions=decisions,
+                rule_evaluations=rule_evaluations,
+            ),
+            run_dir=out,
+        )
 
 
 def _build_summary(
@@ -219,13 +245,22 @@ def main():
     parser.add_argument(
         "--diagnostics",
         action="store_true",
-        help="Print runtime versions and Python stacks every 30 seconds during input loading",
+        help="Log runtime versions and save Python stacks to run.log every 30 seconds during input loading",
     )
+    add_logging_arguments(parser)
     args = parser.parse_args()
     try:
-        analyze(args.dataset, args.config, diagnostics=args.diagnostics)
-    except (ValueError, TypeError, KeyError, OSError, yaml.YAMLError) as exc:
-        parser.exit(2, f"Analysis failed: {exc}\n")
+        analyze(
+            args.dataset,
+            args.config,
+            diagnostics=args.diagnostics,
+            log_level=args.log_level,
+            file_log_level=args.file_log_level,
+        )
+    except KeyboardInterrupt:
+        parser.exit(130)
+    except Exception as exc:
+        exit_with_error(parser, exc, "Analysis failed")
 
 
 if __name__ == "__main__":

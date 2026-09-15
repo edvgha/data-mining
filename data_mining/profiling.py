@@ -1,5 +1,6 @@
 """Full-data feature distributions, analysis buckets, and target associations."""
 
+import logging
 from dataclasses import dataclass
 
 import numpy as np
@@ -15,6 +16,8 @@ from .statistics import (
     standardized_mean_difference,
     table_association,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -176,15 +179,17 @@ def profile_features(df: pd.DataFrame, cfg: dict) -> FeatureAnalysis:
     rng = np.random.default_rng(cfg["seed"])
     sample_idx = np.sort(rng.choice(n, min(n, cfg["sample_rows"]), replace=False))
     ys = y[sample_idx]
-    print(
-        f"Loaded {n:,} rows; {len(features)} features; analysis sample: {len(sample_idx):,} rows.",
-        flush=True,
+    logger.info(
+        "Loaded %s rows; %s features; analysis sample: %s rows.",
+        n,
+        len(features),
+        len(sample_idx),
     )
-    print("Profiling features and target associations...", flush=True)
+    logger.info("Profiling features and target associations...")
     buckets, labels, profiles, numeric = {}, {}, [], {}
     association_rows, feature_tables, bucket_dictionary = [], {}, []
     for i, (name, kind) in enumerate(features.items(), 1):
-        print(f"[{i}/{len(features)}] {name}", flush=True)
+        logger.debug("Feature [%s/%s]: %s", i, len(features), name)
         if kind == "numerical":
             b, lab, info, clean = numerical_buckets(df[name], cfg)
             numeric[name] = clean.to_numpy()[sample_idx]

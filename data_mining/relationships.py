@@ -1,6 +1,7 @@
 """Feature-pair, configured-interaction, temporal, and group analysis stages."""
 
 import itertools
+import logging
 import math
 from dataclasses import dataclass
 
@@ -17,6 +18,8 @@ from .statistics import (
     safe_corr,
     table_association,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -52,7 +55,7 @@ def analyze_pairs(analysis: FeatureAnalysis, cfg: dict) -> pd.DataFrame:
         cfg["max_pairs"] if any(enabled(cfg, metric) for metric in METRICS["feature_pairs"]) else 0
     )
     pairs_to_analyze = min(pair_count, pairs_limit)
-    print(f"Analyzing feature pairs: {pairs_to_analyze}/{pair_count} pairs...", flush=True)
+    logger.info("Analyzing feature pairs: %s/%s pairs...", pairs_to_analyze, pair_count)
     for a, b in itertools.islice(itertools.combinations(names, 2), pairs_limit):
         ka, kb = internal[a], internal[b]
         row = {
@@ -87,7 +90,7 @@ def analyze_pairs(analysis: FeatureAnalysis, cfg: dict) -> pd.DataFrame:
             )
         pair_rows.append(row)
         if len(pair_rows) % 25 == 0 or len(pair_rows) == pairs_to_analyze:
-            print(f"  Pairs completed: {len(pair_rows)}/{pairs_to_analyze}", flush=True)
+            logger.debug("Pairs completed: %s/%s", len(pair_rows), pairs_to_analyze)
     pairs_df = pd.DataFrame(
         pair_rows, columns=None if pair_rows else ["feature_a", "feature_b", "sample_rows"]
     )
@@ -104,9 +107,9 @@ def analyze_interactions(analysis: FeatureAnalysis, cfg: dict) -> InteractionAna
     y, ys = analysis.target, analysis.sampled_target
     n = len(y)
     joint_rows, joint_tables = [], {}
-    print("Checking configured interactions...", flush=True)
+    logger.info("Checking configured interactions...")
     for i, group in enumerate(cfg["interactions"], 1):
-        print(f"  Interaction [{i}/{len(cfg['interactions'])}]: {' + '.join(group)}", flush=True)
+        logger.debug("Interaction [%s/%s]: %s", i, len(cfg["interactions"]), " + ".join(group))
         if not enabled(cfg, "joint_positive_rate") and not enabled(cfg, "joint_information"):
             joint_rows.append({"features": " + ".join(group), "status": "disabled"})
             continue
@@ -158,7 +161,7 @@ def analyze_temporal(df: pd.DataFrame, analysis: FeatureAnalysis, cfg: dict) -> 
     temporal_features = []
     temporal_status = "not_requested"
     time_missing = 0
-    print("Checking temporal analysis...", flush=True)
+    logger.info("Checking temporal analysis...")
     if cfg["time_column"] and not any(enabled(cfg, metric) for metric in METRICS["temporal"]):
         temporal_status = "disabled"
     if cfg["time_column"] and any(enabled(cfg, metric) for metric in METRICS["temporal"]):
@@ -185,7 +188,7 @@ def analyze_temporal(df: pd.DataFrame, analysis: FeatureAnalysis, cfg: dict) -> 
                     pd.DataFrame({"period": periods}), y, cfg
                 )
             for i, name in enumerate(names, 1):
-                print(f"  Temporal [{i}/{len(names)}]: {name}", flush=True)
+                logger.debug("Temporal [%s/%s]: %s", i, len(names), name)
                 key = internal[name]
                 if enabled(cfg, "time_drift"):
                     ct = pd.crosstab(periods, codes[key])
@@ -225,7 +228,7 @@ def summarize_groups(df: pd.DataFrame, cfg: dict) -> dict | None:
     """Describe repeated-observation groups, including missing group values."""
     group_summary = None
     if cfg["group_column"]:
-        print(f"Summarizing groups: {cfg['group_column']}...", flush=True)
+        logger.info("Summarizing groups: %s...", cfg["group_column"])
         gs = df.groupby(cfg["group_column"], dropna=False, observed=True)[cfg["target"]].agg(
             ["size", "sum"]
         )

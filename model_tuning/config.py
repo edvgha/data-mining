@@ -1,12 +1,16 @@
 """Strict, intentionally small configuration surface."""
+import math
 from copy import deepcopy
 from pathlib import Path
-import math
+
 import yaml
+
+from run_logging import DEFAULT_LOGGING, logging_settings
 
 DEFAULTS = {
     "target": None, "time_column": None, "features": {}, "group_by": [],
     "output_dir": "../report/model_tuning", "seed": 42, "nthread": 4,
+    "logging": DEFAULT_LOGGING,
     "split": {"train_fraction": .6, "validation_fraction": .2,
               "early_stopping_fraction": .15, "train_end": None,
               "validation_end": None, "gap": "0D", "entity_column": None},
@@ -78,6 +82,7 @@ def configure(raw):
             cfg[key].update(value)
         else:
             cfg[key] = value
+    cfg["logging"] = logging_settings(cfg["logging"])
     for key in ["target", "time_column", "output_dir"]:
         if not isinstance(cfg[key], str) or not cfg[key]:
             raise ValueError(f"{key} must be a nonempty string.")

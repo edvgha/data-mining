@@ -38,6 +38,9 @@ group_column: searchid
 ignore: []
 strict_schema: true
 output_dir: ../report  # Keep generated reports outside the demo input folder.
+logging:
+  console_level: INFO
+  file_level: DEBUG
 
 bins: 10
 max_categories: 20

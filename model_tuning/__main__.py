@@ -1,24 +1,27 @@
 """Usage: uv run python -m model_tuning DATA.parquet CONFIG.yaml"""
 import argparse
 from pathlib import Path
-import yaml
+
+from run_logging import add_logging_arguments, exit_with_error
 
 
 def main():
     parser = argparse.ArgumentParser(description="Tune binary XGBoost with Optuna and chronological bootstrap evaluation.")
     parser.add_argument("data", type=Path, help="Local Parquet file; relative to the current directory")
     parser.add_argument("config", type=Path, help="YAML configuration; output_dir is relative to this file")
+    add_logging_arguments(parser)
     args = parser.parse_args()
     try:
         from .config import load_config
         from .pipeline import run
-        out = run(args.data.resolve(), load_config(args.config))
+        run(args.data.resolve(), load_config(args.config),
+            log_level=args.log_level, file_log_level=args.file_log_level)
     except ImportError as exc:
-        parser.exit(2, f"Missing dependency: {exc}. Run uv sync --locked from the repository root.\n")
-    except (ValueError, KeyError, TypeError, OSError, yaml.YAMLError) as exc:
-        parser.exit(2, f"Error: {exc}\n")
-    print(f"Report: {out / 'report.html'}", flush=True)
-    print(f"Model: {out / 'model.ubj'}", flush=True)
+        exit_with_error(parser, exc, "Missing dependency (run uv sync --locked from the repository root)")
+    except KeyboardInterrupt:
+        parser.exit(130)
+    except Exception as exc:
+        exit_with_error(parser, exc, "Model tuning failed")
 
 
 if __name__ == "__main__":

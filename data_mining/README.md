@@ -43,13 +43,20 @@ uv run --locked -m data_mining /path/to/data.parquet config.yaml
 
 `uv sync --locked` installs the shared environment for data mining and model tuning, including Optuna and XGBoost.
 
+Progress uses logging: `INFO` on the console (stderr) and `DEBUG` in each run's
+`run.log` by default. Use `--log-level DEBUG` for detailed console progress or
+`--log-level WARNING` for a quiet console while retaining the detailed file log.
+Set `logging.console_level` and `logging.file_level` in YAML, or override them
+with `--log-level` and `--file-log-level`. See the [shared logging reference](../README.md#logging)
+for severity levels, file paths, and error handling.
+
 Or use the same two-input Python interface:
 
 ```python
 from data_mining import audit
 
-report_directory = audit("/path/to/data.parquet", "config.yaml")
-print(report_directory / "report.html")
+report_directory = audit("/path/to/data.parquet", "config.yaml", log_level="INFO")
+# The return value is the absolute run directory; run.log and report.html are inside it.
 ```
 
 Configure every input feature as `numerical` or `categorical`. Integer IDs should
@@ -277,14 +284,15 @@ untouched by feature-selection decisions.
 ## Outputs
 
 Every run creates a fresh directory under `output_dir`, resolved relative to the
-config file. The absolute output directory is printed at startup, with progress
+config file. The absolute output directory is logged at startup, with progress
 for feature profiles, feature pairs, interactions, temporal analysis, and report
-writing. The final `Report:` line gives the exact HTML file to open in your
+writing. The final `INFO` message containing `Report:` gives the exact HTML file to open in your
 browser; the command does not open a browser automatically. Old reports cannot
 be mixed with changed settings.
 
 | File | Contents |
 |---|---|
+| `run.log` | Timestamped application logs at the configured file level, including run failures and requested diagnostic stacks |
 | `report.html` | Self-contained report with feature decisions, exact reasons, tables, and enabled positive-class rate plots |
 | `report.md` | Readable per-feature decisions, categorical diversity with bounds, and interpretation notes |
 | `feature_decisions.csv` / `.json` | One row/object per feature, final action, related columns, evidence values and reason |
@@ -345,33 +353,35 @@ synthetic demonstration data, not real customer data.
 
 **Where is the report?** Wait for `Analysis complete`, then open the file shown
 on the final `Report:` line. For this demo it is
-`report/run_<UTC timestamp>/report.html` inside the project directory, with
-`report.md` and the CSV/JSON files beside it. Reaching `[24/24] week_day` only
+`report/run_<UTC timestamp>_<suffix>/report.html` inside the project directory, with
+`run.log`, `report.md`, and the CSV/JSON files beside it. At `DEBUG` level, reaching `Feature [24/24]: week_day` only
 finishes the per-feature stage; pair, interaction, temporal, and report-writing
 stages still follow. The million-row run can take a few minutes depending on
-your machine and enabled statistics. If it exits with `Analysis failed: ...`,
-the run did not complete; that error explains what needs correcting.
+your machine and enabled statistics. A logged `Run failed` message and traceback
+explain an incomplete run; configuration errors use `ERROR Analysis failed`.
 
 If the command stalls during **Reading and validating Parquet**, loading has not
-finished and no report is expected yet. Separate progress messages identify
+finished and no report is expected yet; its run directory and log already exist.
+Detailed messages in `run.log` (and on the console at `DEBUG`) identify
 metadata loading, column decoding, pandas conversion, and validation. Stop the
 stalled command with Ctrl+C, then run:
 
 ```bash
-uv run --locked -m data_mining demo/data.parquet demo/config.yaml --diagnostics
+uv run --locked -m data_mining demo/data.parquet demo/config.yaml --log-level DEBUG --diagnostics
 ```
 
-This prints Python, OS/architecture, pandas, and PyArrow versions. If loading or
-validation takes longer than 30 seconds, Python stack snapshots are printed to
-stderr every 30 seconds until input validation finishes. A snapshot does not
+This logs Python, OS/architecture, pandas, and PyArrow versions. If loading or
+validation takes longer than 30 seconds, Python stack snapshots are saved to
+`run.log` every 30 seconds until input validation finishes, regardless of the file
+severity threshold. A snapshot does not
 terminate the process or by itself mean an error occurred. Include the last
-progress message and the stack output when reporting a persistent stall.
+progress message and the log file when reporting a persistent stall.
 If the shell prompt returns before `Analysis complete`, the process has exited;
 it is no longer waiting for the 30-second stack snapshot. Capture its exit code
 and enable Python's fatal-error traceback handler with:
 
 ```bash
-uv run --locked --python 3.12 python -X faulthandler -m data_mining demo/data.parquet demo/config.yaml --diagnostics
+uv run --locked --python 3.12 python -X faulthandler -m data_mining demo/data.parquet demo/config.yaml --log-level DEBUG --diagnostics
 echo "Exit code: $?"
 ```
 
@@ -399,6 +409,7 @@ and [ChunkedArray.to_pylist API](https://arrow.apache.org/docs/python/generated/
 | Module | Responsibility |
 |---|---|
 | [`audit.py`](audit.py) | Public `analyze()` entry point, CLI, diagnostics, and run summary |
+| [`run_logging.py`](../run_logging.py) | Shared per-run console/file handlers and logging-level validation |
 | [`config.py`](config.py) | Defaults and strict YAML configuration validation |
 | [`dataset.py`](dataset.py) | Parquet schema validation and Arrow-to-pandas conversion |
 | [`statistics.py`](statistics.py) | Statistical formulas and positive-rate tables |

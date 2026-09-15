@@ -31,6 +31,9 @@ group_by:
   - [publisher_accountid]
   - [service_code]
 output_dir: ../report/model_tuning
+logging:
+  console_level: INFO
+  file_level: DEBUG
 seed: 42
 nthread: 4
 split:

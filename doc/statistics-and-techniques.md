@@ -1312,10 +1312,11 @@ Each named feature must exist in your own `features` mapping. Settings omitted f
 
 ### 11.3 Where to find the numbers
 
-Every run creates a fresh timestamped folder under `output_dir`.
+After configuration validation, every run creates a fresh timestamped folder under `output_dir` before data loading. The `run.log` file is available while the run is in progress and records failures at `ERROR`. Defaults are `INFO` on the console (stderr) and `DEBUG` in the file. Configure `logging.console_level` / `logging.file_level`, or override them with `--log-level` / `--file-log-level`; see the [logging reference](../README.md#logging).
 
 | Output | What it contains |
 |---|---|
+| `run.log` | UTC timestamps, severity, logger names, progress, and failures at the configured file logging level |
 | `numerical_univariate.csv` | Numerical quality and enabled distribution summaries |
 | `categorical_univariate.csv` | Original-category summaries, pooling metadata, and flags |
 | `categorical_diversity.csv` | Per-feature entropy and effective-level values with `{minimum, maximum}` in each metric label |

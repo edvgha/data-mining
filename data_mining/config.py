@@ -4,11 +4,14 @@ from pathlib import Path
 
 import yaml
 
+from run_logging import DEFAULT_LOGGING, logging_settings
+
 from .settings import EXTRA_DEFAULTS, configure_decisions
 
 DEFAULTS = {
     **EXTRA_DEFAULTS,
     "output_dir": "report",
+    "logging": DEFAULT_LOGGING,
     "ignore": [],
     "time_column": None,
     "group_column": None,
@@ -54,6 +57,7 @@ def load_config(path: str | Path) -> dict:
     if unknown:
         raise ValueError(f"Unknown config settings: {sorted(unknown)}")
     cfg = {**DEFAULTS, **raw}
+    cfg["logging"] = logging_settings(cfg["logging"])
     if not isinstance(cfg.get("target"), str) or not cfg["target"]:
         raise ValueError("target must be a nonempty column name.")
     features = cfg.get("features")
